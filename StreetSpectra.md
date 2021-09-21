@@ -72,7 +72,7 @@ streetspectra-action-database
 # Activate virtualenv if necessary
 . venv_airflow/bin/activate
 
-actiontool dags install streetspectra_collect
+actiontool streetspectra dags install streetspectra_collect
 ````
 
 ```
@@ -130,7 +130,7 @@ and also configure Airflow's SMTP capabilities. See Stack's overflow [How to set
 # Activate virtualenv if necessary
 . venv_airflow/bin/activate
 
-actiontool dags install streetspectra_feed
+actiontool streetspectra dags install streetspectra_feed
 ```
 
 
@@ -147,7 +147,7 @@ Using the `actiontool` command installed as par of the `streetspectra-tool` Pyth
 Example:
 
 ```bash
-(venv_airflow)  ~$ actiontool database install streetspectra /home/rafa/airflow/extra
+(venv_airflow)  ~$ actiontool streetspectra database install streetspectra /home/rafa/airflow/extra
 ```
 
 The tool will output somethoing like this:
@@ -210,5 +210,5 @@ streetspectra-zenodo-sandbox
 # Activate virtualenv if necessary
 . venv_airflow/bin/activate
 
-actiontool dags install streetspectra_aggregate
+actiontool streetspectra dags install streetspectra_aggregate
 ```
