@@ -1,0 +1,3 @@
+include versioneer.py
+include src/actiontool/_version.py
+recursive-include files *
