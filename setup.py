@@ -31,8 +31,8 @@ CLASSIFIERS  = [
 
 PACKAGE_DATA = {
     'actiontool': [
-        'data/dags/*.py',
-        'data/sql/*.sql'
+        'streetspectra/data/dags/*.py',
+        'streetspectra/data/sql/*.sql'
     ],
 }
 

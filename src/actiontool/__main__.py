@@ -92,14 +92,22 @@ def createParser():
 	# --------------------------
 	# Create first level parsers
 	# --------------------------
-	subparser = parser.add_subparsers(dest='command')
-	parser_dags = subparser.add_parser('dags',     help='Install DAGs into Airflow dags folder')
-	parser_db   = subparser.add_parser('database', help='Install Auxiliar SQLit databases')
+	subparser = parser.add_subparsers(dest='pilot')
+	parser_ss = subparser.add_parser('streetspectra', help='StreetSpectra pilot')
+	
 	
 
-	# ----------------
-	# DAGS Commands
-	# ----------------
+	# ---------------------------------------------
+	# Create second level parser for StreetSpectra
+	# ---------------------------------------------
+	subparser = parser_ss.add_subparsers(dest='command')
+	parser_dags = subparser.add_parser('dags',     help='(SS) Install DAGs into Airflow dags folder')
+	parser_db   = subparser.add_parser('database', help='(SS) Install Auxiliar SQLite database')
+	
+
+	# ---------------------------
+	# StreetSpectra DAGS Commands
+	# ----------------------------
 
 	subparser = parser_dags.add_subparsers(dest='subcommand')
 
@@ -107,9 +115,9 @@ def createParser():
 	parser_dags_install.add_argument('name',  type=str, help='Airflow DAG file to install [without .py]')
 	parser_dags_install.add_argument('directory',  type=str, help='Airflow DAGs Directory where to copy')
 
-	# -----------------
-	# Database Commands
-	# -----------------
+	# -------------------------------
+	# StreetSpectra Database Commands
+	# -------------------------------
 
 	subparser = parser_db.add_subparsers(dest='subcommand')
 
@@ -132,13 +140,14 @@ def main():
 		configureLogging(options)
 		setup(options)
 		name = os.path.split(os.path.dirname(sys.argv[0]))[-1]
+		package = f"{name}.{options.pilot}"
 		command  = f"{options.command}"
-		subcommand = options.subcommand
-		try:
-			command = importlib.import_module(command, package=name)
+		subcommand = f"{options.subcommand}"
+		try: 
+			command = importlib.import_module(command, package=package)
 		except ModuleNotFoundError:	# when debugging module in git source tree ...
 			command  = f".{options.command}"
-			command = importlib.import_module(command, package=name)
+			command = importlib.import_module(command, package=package)
 		log.info(f"============== {name} {__version__} ==============")
 		getattr(command, subcommand)(options)
 	except KeyboardInterrupt as e:
