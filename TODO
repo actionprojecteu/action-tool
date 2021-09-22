@@ -1,0 +1,13 @@
+# Incoporar la generacion de mapas y copiarlos al sitio web de GUAIX o lo que sea
+
+from airflow.providers.ssh.operators.ssh import SSHOperator
+from airflow.providers.ssh.hooks.ssh import SSHHook
+sshHook = SSHHook(ssh_conn_id="conn-id", key_file='/opt/airflow/keys/ssh.key')
+# a hook can also be defined directly in the code:
+# sshHook = SSHHook(remote_host='server.com', username='admin', key_file='/opt/airflow/keys/ssh.key')
+
+ls = SSHOperator(
+        task_id="ls",
+        command= "ls -l",
+        ssh_hook = sshHook,
+        dag = dag)

@@ -94,7 +94,7 @@ check_enough_observations = BranchPythonOperator(
     python_callable = check_number_of_entries,
     op_kwargs = {
         "conn_id"       : "streetspectra-action-database",
-        "start_date"    : "2019-09-01T00:00:00.00000Z",     # ESTA ES LA PRIMERA FECHA EN LA QUE HAY ALGO
+        "start_date"    : Variable.get("streetspectra_read_tstamp"),  
         "n_entries"     : 100,                              # ESTO TIENE QUE CAMBIARSE A 100 PARA PRODUCCION
         "project"       : "street-spectra",
         "true_task_id"  : "download_from_action",
@@ -108,7 +108,7 @@ email_no_images = EmailOperator(
     task_id      = "email_no_images",
     to           = ("developer@actionproject.eu","astrorafael@gmail.com"),      # Cambiar al email verdadero en produccion
     subject      = "[StreetSpectra] Airflow warn: No ACTION images left",
-    html_content = "No images left in ACTION database to create an new Zooniverse Subject Set.",
+    html_content = "Not enough images left in ACTION database to create a new Zooniverse Subject Set.",
     dag          = streetspectra_feed_dag,
 )
 

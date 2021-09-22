@@ -19,6 +19,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.utils.dates import days_ago
 
+from airflow.models import Variable
+
 from airflow.operators.bash import BashOperator
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator, ShortCircuitOperator, BranchPythonOperator
@@ -183,7 +185,7 @@ check_enough_observations = BranchPythonOperator(
     python_callable = check_number_of_entries,
     op_kwargs = {
         "conn_id"       : "streetspectra-action-database",
-        "start_date"    : "2019-09-01T00:00:00.00000Z",     # ESTA ES LA PRIMERA FECHA EN LA QUE HAY ALGO
+        "start_date"    : Variable.get("streetspectra_read_tstamp"),    
         "n_entries"     : 10,                               # ESTO TIENE QUE CAMBIARSE A 500 PARA PRODUCCION
         "project"       : "street-spectra",
         "true_task_id"  : "download_from_action",
@@ -197,7 +199,7 @@ email_no_images = EmailOperator(
     task_id      = "email_no_images",
     to           = ("astrorafael@gmail.com",),
     subject      = "[StreetSpectra] Airflow warn: No ACTION images left",
-    html_content = "No images left in ACTION database to create an new Zooniverse Subject Set.",
+    html_content = "Not enough images left in ACTION database to create a new Zooniverse Subject Set.",
     dag          = streetspectra_feed_dag,
 )
 
@@ -277,7 +279,7 @@ streetspectra_aggregate_dag = DAG(
 # Perform the whole Zooniverse export from the beginning of the project
 export_classifications = ZooniverseExportOperator(
     task_id     = "export_classifications",
-    conn_id     = "streetspectra-zooniverse-test",      # CAMBIAR AL conn_id DE PRODUCCION
+    conn_id     = "streetspectra-zooniverse",      # CAMBIAR AL conn_id DE PRODUCCION
     output_path = "/tmp/zooniverse/complete-{{ds}}.json",
     generate    = True, 
     wait        = True, 
@@ -399,12 +401,19 @@ join_published = DummyOperator(
 )
 
 # Clean up temporary files
-clean_up_classif_files = BashOperator(
-    task_id      = "clean_up_classif_files",
-    trigger_rule = "none_failed",    # For execution of just one preceeding branch only
-    bash_command = "rm /tmp/zooniverse/*.csv; rm /tmp/zooniverse/*-{{ds}}.json",
-    dag          = streetspectra_aggregate_dag,
+# clean_up_classif_files = BashOperator(
+#     task_id      = "clean_up_classif_files",
+#     trigger_rule = "none_failed",    # For execution of just one preceeding branch only
+#     bash_command = "rm /tmp/zooniverse/*.csv; rm /tmp/zooniverse/*-{{ds}}.json",
+#     dag          = streetspectra_aggregate_dag,
+# )
+
+clean_up_classif_files = DummyOperator(
+    task_id    = "clean_up_classif_files",
+    dag        = streetspectra_aggregate_dag,
 )
+
+
 
 # -----------------
 # Task dependencies
