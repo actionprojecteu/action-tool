@@ -295,14 +295,15 @@ only_new_classifications = ZooniverseDeltaOperator(
     conn_id       = "streetspectra-db",
     input_path    = "/tmp/zooniverse/complete-{{ds}}.json",
     output_path   = "/tmp/zooniverse/subset-{{ds}}.json",
+    start_date_threshold  = "2021-09-01",
     dag           = streetspectra_aggregate_dag,
 )
 
 # Transforms the new Zooniverse classifcations file in to a JSON
 # file suitable to be loaded into the ACTION database as 'classifications'
 # This is valid for any project that uses the ACTION database API
-transform_classfications = ZooniverseTransformOperator(
-    task_id      = "transform_classfications",
+transform_classifications = ZooniverseTransformOperator(
+    task_id      = "transform_classifications",
     input_path   = "/tmp/zooniverse/subset-{{ds}}.json",
     output_path  = "/tmp/zooniverse/transformed-subset-{{ds}}.json",
     project      = "street-spectra",
@@ -419,7 +420,7 @@ clean_up_classif_files = DummyOperator(
 # Task dependencies
 # -----------------
 
-export_classifications >> only_new_classifications >> transform_classfications >> preprocess_classifications
+export_classifications >> only_new_classifications >> transform_classifications >> preprocess_classifications
 preprocess_classifications >> check_new_spectra >> [aggregate_classifications, skip_to_end]
 aggregate_classifications >> [export_aggregated_csv, export_individual_csv]
 export_aggregated_csv >> publish_aggregated_csv
