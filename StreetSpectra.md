@@ -75,7 +75,6 @@ streetspectra-action-database
 actiontool streetspectra dags install streetspectra_collect
 ````
 
-```
 # Zooniverse feeding workflow
 
 The following items must be provisioned:
