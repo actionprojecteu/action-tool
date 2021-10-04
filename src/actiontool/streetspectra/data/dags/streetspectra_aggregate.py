@@ -30,7 +30,7 @@ from airflow.operators.python import BranchPythonOperator
 from airflow_actionproject.operators.zooniverse    import ZooniverseExportOperator, ZooniverseDeltaOperator, ZooniverseTransformOperator
 from airflow_actionproject.operators.zenodo        import ZenodoPublishDatasetOperator
 from airflow_actionproject.operators.streetspectra import PreprocessClassifOperator, AggregateOperator, AggregateCSVExportOperator, IndividualCSVExportOperator
-from airflow_actionproject.callables.streetspectra import check_new_subjects
+from airflow_actionproject.callables.streetspectra import check_new_subjects, check_new_csv_version
 
 # ---------------------
 # Default DAG arguments
@@ -147,8 +147,9 @@ check_new_spectra = BranchPythonOperator(
 
 # needed for branching
 skip_to_end = DummyOperator(
-    task_id    = "skip_to_end",
-    dag        = streetspectra_aggregate_dag,
+    task_id      = "skip_to_end",
+    trigger_rule = "none_failed",    # For execution of just one preceeding branch only
+    dag          = streetspectra_aggregate_dag,
 )
 
 
@@ -177,6 +178,45 @@ export_individual_csv = IndividualCSVExportOperator(
     conn_id     = "streetspectra-db",
     output_path = "/tmp/zooniverse/streetspectra-individual.csv",
     dag         = streetspectra_aggregate_dag,
+)
+
+
+check_new_individual_csv = BranchPythonOperator(
+    task_id         = "check_new_individual_csv",
+    python_callable = check_new_csv_version,
+    op_kwargs = {
+        "conn_id"       : "streetspectra-db",
+        "input_path"    : "/tmp/zooniverse/streetspectra-individual.csv",
+        "input_type"    : "individual",
+        "true_task_id"  : "publish_individual_csv",
+        "false_task_id" : "join_indiv_published",
+    },
+    dag           = streetspectra_aggregate_dag
+)
+
+check_new_aggregated_csv = BranchPythonOperator(
+    task_id         = "check_new_aggregated_csv",
+    python_callable = check_new_csv_version,
+    op_kwargs = {
+        "conn_id"       : "streetspectra-db",
+        "input_path"    : "/tmp/zooniverse/streetspectra-aggregated.csv",
+        "input_type"    : "aggregated",
+        "true_task_id"  : "publish_aggregated_csv",
+        "false_task_id" : "join_aggre_published",
+    },
+    dag           = streetspectra_aggregate_dag
+)
+
+join_aggre_published = DummyOperator(
+    task_id      = "join_aggre_published",
+    trigger_rule = "none_failed",    # For execution of just one preceeding branch only
+    dag          = streetspectra_aggregate_dag,
+)
+
+join_indiv_published = DummyOperator(
+    task_id      = "join_indiv_published",
+    trigger_rule = "none_failed",    # For execution of just one preceeding branch only
+    dag          = streetspectra_aggregate_dag,
 )
 
 # Publish the aggregated dataset to Zenodo
@@ -228,7 +268,7 @@ clean_up_classif_files = BashOperator(
 export_classifications >> only_new_classifications >> transform_classifications >> preprocess_classifications
 preprocess_classifications >> check_new_spectra >> [aggregate_classifications, skip_to_end]
 aggregate_classifications >> [export_aggregated_csv, export_individual_csv]
-export_aggregated_csv >> publish_aggregated_csv
-export_individual_csv >> publish_individual_csv
-[publish_aggregated_csv, publish_individual_csv] >> join_published
+export_aggregated_csv >> check_new_aggregated_csv >> [publish_aggregated_csv, join_aggre_published]
+export_individual_csv >> check_new_individual_csv >> [publish_individual_csv, join_indiv_published]
+[join_aggre_published, join_indiv_published] >> join_published
 [join_published, skip_to_end] >> clean_up_classif_files
