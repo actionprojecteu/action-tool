@@ -115,3 +115,20 @@ CREATE TABLE IF NOT EXISTS spectra_aggregate_t
 
     PRIMARY KEY(subject_id, source_id)
 );
+
+
+------------------------------------------------------------------------
+-- This is the table where we store all StreetSpectra aggregate
+-- classifications data ready to be exported to a suitable file format
+-- to Zenodo 
+------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS zenodo_csv_t
+(
+    hash        BLOB,    -- CSV hash
+    type        TEXT,    -- Either 'individual' or 'aggregated'.
+    version     TEXT,    -- Publish version as semantic versioning (YY.MM)
+
+    PRIMARY KEY(hash)
+);
+
