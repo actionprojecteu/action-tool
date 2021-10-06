@@ -31,9 +31,6 @@ from ._version import get_versions
 # Module constants
 # ----------------
 
-RESOURCES_DAGS_DIR  = resource_filename(__name__, os.path.join('data','dags'))
-RESOURCES_DBASE_DIR = resource_filename(__name__, os.path.join('data','sql'))
-
 
 __version__ = get_versions()['version']
 
