@@ -70,6 +70,39 @@ default_args = {
     # 'trigger_rule': 'all_success'
 }
 
+# =============
+# Maps Workflow
+# =============
+
+streetspectra_maps_dag = DAG(
+    'streetspectra_maps_dag',
+    default_args      = default_args,
+    description       = 'StreetSpectra: HTML maps',
+    schedule_interval = '@daily',
+    start_date        = datetime(year=2019, month=1, day=1),
+    tags              = ['StreetSpectra', 'ACTION PROJECT'],
+)
+
+# This is a cummulative downloading from the beginning
+jz_export_ec5_observations = EC5ExportEntriesOperator(
+    task_id      = "jz_export_ec5_observations",
+    conn_id      = "streetspectra-epicollect5",
+    start_date   = datetime(year=2019, month=1, day=1),
+    end_date     = "{{next_ds}}",
+    output_path  = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
+    dag          = streetspectra_maps_dag,
+)
+
+
+jz_transform_ec5_observations = EC5TransformOperator(
+    task_id      = "jz_transform_ec5_observations",
+    input_path   = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
+    output_path  = "/tmp/ec5/street-spectra/jz-{{ds}}.json.json",
+    dag          = streetspectra_maps_dag,
+)
+
+jz_export_ec5_observations >> jz_transform_ec5_observations
+
 # =========================
 # Observations ETL Workflow
 # =========================
