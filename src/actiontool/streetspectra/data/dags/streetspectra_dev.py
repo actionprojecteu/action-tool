@@ -97,11 +97,21 @@ jz_export_ec5_observations = EC5ExportEntriesOperator(
 jz_transform_ec5_observations = EC5TransformOperator(
     task_id      = "jz_transform_ec5_observations",
     input_path   = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
-    output_path  = "/tmp/ec5/street-spectra/jz-{{ds}}.json.json",
+    output_path  = "/tmp/ec5/street-spectra/jz-{{ds}}.json",
     dag          = streetspectra_maps_dag,
 )
 
-jz_export_ec5_observations >> jz_transform_ec5_observations
+jz_email_json = EmailOperator(
+    task_id      = "jz_email_json",
+    to           = ("astrorafael@gmail.com",),
+    subject      = "[StreetSpectra] Epicollect V JSON file",
+    html_content = "Hola Jaime:.\n Aquí te envío el JSON actualizado.",
+    files        = ['/tmp/ec5/street-spectra/jz-{{ds}}.json'],
+    dag          = streetspectra_maps_dag,
+)
+
+
+jz_export_ec5_observations >> jz_transform_ec5_observations >> jz_email_json
 
 # =========================
 # Observations ETL Workflow
