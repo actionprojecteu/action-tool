@@ -11,3 +11,7 @@ ls = SSHOperator(
         command= "ls -l",
         ssh_hook = sshHook,
         dag = dag)
+
+ # Sacar los JSON que pide Jaime con
+
+ 	(venv_airflow)  (main) ~/repos/action-tool$ airflow dags test streetspectra_maps_dag YYYY-MM-DD
