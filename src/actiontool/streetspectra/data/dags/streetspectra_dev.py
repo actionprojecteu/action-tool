@@ -78,7 +78,7 @@ streetspectra_maps_dag = DAG(
     'streetspectra_maps_dag',
     default_args      = default_args,
     description       = 'StreetSpectra: HTML maps',
-    schedule_interval = '@daily',
+    schedule_interval = '@monthly',
     start_date        = datetime(year=2019, month=1, day=1),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
 )
@@ -87,7 +87,7 @@ streetspectra_maps_dag = DAG(
 jz_export_ec5_observations = EC5ExportEntriesOperator(
     task_id      = "jz_export_ec5_observations",
     conn_id      = "streetspectra-epicollect5",
-    start_date   = datetime(year=2019, month=1, day=1),
+    start_date   = "{{ds}}",
     end_date     = "{{next_ds}}",
     output_path  = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
     dag          = streetspectra_maps_dag,
@@ -103,9 +103,9 @@ jz_transform_ec5_observations = EC5TransformOperator(
 
 jz_email_json = EmailOperator(
     task_id      = "jz_email_json",
-    to           = ("astrorafael@gmail.com",),
+    to           = ("astrorafael@gmail.com","jzamorano@fis.ucm.es"),
     subject      = "[StreetSpectra] Epicollect V JSON file",
-    html_content = "Hola Jaime:.\n Aquí te envío el JSON actualizado.",
+    html_content = "Hola Jaime:.\n Aquí te envío el JSON del mes {{ds}}.",
     files        = ['/tmp/ec5/street-spectra/jz-{{ds}}.json'],
     dag          = streetspectra_maps_dag,
 )
