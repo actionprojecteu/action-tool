@@ -105,7 +105,7 @@ jz_email_json = EmailOperator(
     task_id      = "jz_email_json",
     to           = ("astrorafael@gmail.com","jzamorano@fis.ucm.es"),
     subject      = "[StreetSpectra] Epicollect V JSON file",
-    html_content = "Hola Jaime:.\n Aquí te envío el JSON desde {{prev_ds}} a {{ds}}.",
+    html_content = "Hola Jaime:.\n Aquí te envío el JSON desde {{prev_ds}} hasta {{ds}} incluidos.",
     files        = ['/tmp/ec5/street-spectra/jz-{{ds}}.json'],
     dag          = streetspectra_maps_dag,
 )
