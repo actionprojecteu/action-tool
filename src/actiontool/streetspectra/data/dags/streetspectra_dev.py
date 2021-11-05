@@ -79,7 +79,7 @@ streetspectra_maps_dag = DAG(
     default_args      = default_args,
     description       = 'StreetSpectra: HTML maps',
     schedule_interval = '@daily',
-    start_date        = datetime(year=2019, month=1, day=1),
+    start_date        = days_ago(3),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
 )
 
