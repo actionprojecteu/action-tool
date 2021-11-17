@@ -61,6 +61,9 @@ default_args = {
     # 'trigger_rule': 'all_success'
 }
 
+# Zooniverse Dataset size
+# Recommended between 100 and 500 for production environments
+N_ENTRIES = 100
 
 # ===========================
 # Zooniverse Feeding Workflow
@@ -95,7 +98,7 @@ check_enough_observations = BranchPythonOperator(
     op_kwargs = {
         "conn_id"       : "streetspectra-action-database",
         "start_date"    : Variable.get("streetspectra_read_tstamp"),  
-        "n_entries"     : 100,                              # ESTO TIENE QUE CAMBIARSE A 100 PARA PRODUCCION
+        "n_entries"     : N_ENTRIES,                              
         "project"       : "street-spectra",
         "true_task_id"  : "download_from_action",
         "false_task_id" : "email_no_images",
@@ -117,7 +120,7 @@ download_from_action = ActionDownloadFromVariableDateOperator(
     conn_id        = "streetspectra-action-database",
     output_path    = "/tmp/zooniverse/streetspectra/action-{{ds}}.json",
     variable_name  = "streetspectra_read_tstamp",
-    n_entries      = 100,                                    # ESTO TIENE QUE CAMBIARSE A 100 PARA PRODUCCION
+    n_entries      = N_ENTRIES,                                    
     project        = "street-spectra", 
     obs_type       = "observation",
     dag            = streetspectra_feed_dag,
