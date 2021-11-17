@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.utils.dates import days_ago
-
+from airflow.models import Variable
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import ShortCircuitOperator, BranchPythonOperator
 from airflow.operators.email  import EmailOperator
@@ -63,7 +63,7 @@ default_args = {
 
 # Zooniverse Dataset size
 # Recommended between 100 and 500 for production environments
-N_ENTRIES = 100
+N_ENTRIES = 250
 
 # ===========================
 # Zooniverse Feeding Workflow

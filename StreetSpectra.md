@@ -89,6 +89,7 @@ airflow connections add \
 --conn-login "actionprojecteu" \
 --conn-password "<Zooniverse password>" \
 --conn-schema "street-spectra" \
+--conn-extra '{"auto_disable_ssets": false}' \
 --conn-description "Connection to Zooniverse citizen science web portal" \
 streetspectra-zooniverse
 ```
