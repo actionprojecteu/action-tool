@@ -69,7 +69,8 @@ streetspectra_collect_dag = DAG(
     'streetspectra_collect_dag',
     default_args      = default_args,
     description       = 'StreetSpectra: collect observations',
-    schedule_interval = '@monthly',
+    #schedule_interval = '@monthly',
+    schedule_interval = '0 12 1 * *', # Execute monthly at midday (12:00)
     start_date        = days_ago(1),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
 )

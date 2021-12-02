@@ -79,7 +79,8 @@ streetspectra_aggregate_dag = DAG(
     'streetspectra_aggregate_dag',
     default_args      = default_args,
     description       = 'StreetSpectra: Zooniverse classifications export workflow',
-    schedule_interval = '@monthly',
+    #schedule_interval = '@monthly',
+    schedule_interval = '30 12 1 * *', # Execute monthly at midday (12:30)
     start_date        = days_ago(1),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
 )
