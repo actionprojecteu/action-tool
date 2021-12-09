@@ -127,7 +127,8 @@ streetspectra_collect_dag = DAG(
     'streetspectra_collect_dag',
     default_args      = default_args,
     description       = 'StreetSpectra: collect observations',
-    schedule_interval = '@monthly',
+    #schedule_interval = '@monthly',
+    schedule_interval = '0 12 1 * *', # Execute monthly at midday (12:00)
     start_date        = datetime(year=2019, month=1, day=1),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
 )
@@ -206,7 +207,8 @@ streetspectra_feed_dag = DAG(
     'streetspectra_feed_dag',
     default_args      = default_args,
     description       = 'StreetSpectra: Zooniverse image feeding workflow',
-    schedule_interval = '@daily',
+    #schedule_interval = '@daily',
+    schedule_interval = '10 12 * * *', # Execute daily at midday (12:10)
     start_date        = days_ago(1),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
 )
