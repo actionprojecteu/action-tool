@@ -77,6 +77,8 @@ CREATE TABLE IF NOT EXISTS spectra_classification_t
     image_source        TEXT,   -- observing platform name (currently "Epicollect 5")
     image_created_at    TEXT,   -- image creation UTC timestamp, ISO8601 format
     image_spectrum      TEXT,   -- spectrum type, if any, given by observer to his intended target (which we really don't know)
+    -- other management columns
+    clustered           INT,    -- 1 if passed through clustering processing, 0 otherwise
 
     PRIMARY KEY(classification_id)
 );
