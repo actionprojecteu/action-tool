@@ -324,22 +324,22 @@ streetspectra_aggregate_dag = DAG(
 # -----
 
 # Perform the whole Zooniverse export from the beginning of the project
-# export_classifications = ZooniverseExportOperator(
-#     task_id     = "export_classifications",
-#     conn_id     = "streetspectra-zooniverse",      # CAMBIAR AL conn_id DE PRODUCCION
-#     output_path = "/tmp/zooniverse/complete-{{ds}}.json",
-#     generate    = True, 
-#     wait        = True, 
-#     timeout     = 600,
-#     dag         = streetspectra_aggregate_dag,
-# )
-
-
-export_classifications = BashOperator(
+export_classifications = ZooniverseExportOperator(
     task_id     = "export_classifications",
-    bash_command = "mkdir -p /tmp/zooniverse; cp /home/rafa/repos/action-tool/complete-*.json /tmp/zooniverse",
+    conn_id     = "streetspectra-zooniverse",      # CAMBIAR AL conn_id DE PRODUCCION
+    output_path = "/tmp/zooniverse/complete-{{ds}}.json",
+    generate    = True, 
+    wait        = True, 
+    timeout     = 600,
     dag         = streetspectra_aggregate_dag,
 )
+
+
+# export_classifications = BashOperator(
+#     task_id     = "export_classifications",
+#     bash_command = "mkdir -p /tmp/zooniverse; cp /home/rafa/repos/action-tool/complete-*.json /tmp/zooniverse",
+#     dag         = streetspectra_aggregate_dag,
+# )
 
 
 # Produces an output file with only new classifications
