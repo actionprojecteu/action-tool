@@ -37,12 +37,9 @@ log = logging.getLogger("streetoool")
 # Module constants
 # ----------------
 
-
-def plot(connection, options):
-    '''Perform clustering analysis over source light selection'''
-    log.info("CLUSTERS PLOT")
-    subject_id = int(options.subject_id)
+def get_image(connection, subject_id):
     filename = os.path.join(os.sep, "tmp", str(subject_id) + '.jpg')
+    result = filename
     if os.path.exists(filename):
         log.info(f"getting cached image of {subject_id}.jpg") 
     else:
@@ -62,11 +59,18 @@ def plot(connection, options):
             with open(filename,'wb') as fd:
                 fd.write(response.content)
         else:
-            log.error(f"No image for subject-id {subject_id}")
-            return
+            result = None 
+    return result
 
+
+def plot(connection, options):
+    '''Perform clustering analysis over source light selection'''
+    subject_id = int(options.subject_id)
+    filename = get_image(connection, subject_id)
+    if not filename:
+        log.error(f"No image for subject-id {subject_id}")
+        return
     img = plt.imread(filename)
-   
     cursor = connection.cursor()
     cursor.execute('''
         SELECT source_x, source_y 
@@ -82,13 +86,12 @@ def plot(connection, options):
         return
 
     coordinates = np.array(coordinates)
-    model = cluster.DBSCAN(eps=13, min_samples=2)
+    model = cluster.DBSCAN(eps=options.radius, min_samples=2)
     # Fit the model and predict clusters
     yhat = model.fit_predict(coordinates)
     # retrieve unique clusters
     clusters = np.unique(yhat)
     log.info(f"Subject {subject_id}: {len(clusters)} clusters from {N_Classifications} classifications, ids: {clusters}")
-
     plt.imshow(img, zorder=0)
     # create scatter plot for samples from each cluster
     for cl in clusters:
