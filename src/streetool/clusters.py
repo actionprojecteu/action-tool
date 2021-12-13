@@ -92,7 +92,7 @@ def plot(connection, options):
     # retrieve unique clusters
     clusters = np.unique(yhat)
     log.info(f"Subject {subject_id}: {len(clusters)} clusters from {N_Classifications} classifications, ids: {clusters}")
-    plt.imshow(img, alpha=0,4, zorder=0)
+    plt.imshow(img, alpha=0.5, zorder=0)
     # create scatter plot for samples from each cluster
     for cl in clusters:
         # get row indexes for samples with this cluster
