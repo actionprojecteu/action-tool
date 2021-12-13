@@ -97,5 +97,5 @@ def plot(connection, options):
     for cl in clusters:
         # get row indexes for samples with this cluster
         row_ix = np.where(yhat == cl)
-        plt.scatter(coordinates[row_ix, 0], coordinates[row_ix, 1],  zorder=1)
+        plt.scatter(coordinates[row_ix, 0], coordinates[row_ix, 1],  marker='+', zorder=1)
     plt.show()
