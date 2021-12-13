@@ -13,9 +13,6 @@
 import os
 import os.path
 import logging
-import sqlite3
-import requests
-
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,6 +24,8 @@ import sklearn.cluster as cluster
 
 from actiontool import __version__
 
+from streetool.utils import get_image, paging
+
 # -----------------------
 # Module global variables
 # -----------------------
@@ -37,35 +36,14 @@ log = logging.getLogger("streetoool")
 # Module constants
 # ----------------
 
-def get_image(connection, subject_id):
-    filename = os.path.join(os.sep, "tmp", str(subject_id) + '.jpg')
-    result = filename
-    if os.path.exists(filename):
-        log.info(f"getting cached image of {subject_id}.jpg") 
-    else:
-        cursor = connection.cursor()
-        cursor.execute('''
-            SELECT image_url 
-            FROM spectra_classification_t 
-            WHERE subject_id = :subject_id
-            ''',
-            {'subject_id': subject_id}
-        )
-        image_url = cursor.fetchone()
-        if image_url:
-            image_url = image_url[0]
-            log.info(f"Downloading image from {image_url}")
-            response = requests.get(image_url)
-            with open(filename,'wb') as fd:
-                fd.write(response.content)
-        else:
-            result = None 
-    return result
 
+# ========
+# COMMANDS
+# ========
 
 def plot(connection, options):
     '''Perform clustering analysis over source light selection'''
-    subject_id = int(options.subject_id)
+    subject_id = options.subject_id
     filename = get_image(connection, subject_id)
     if not filename:
         log.error(f"No image for subject-id {subject_id}")
@@ -99,3 +77,40 @@ def plot(connection, options):
         row_ix = np.where(yhat == cl)
         plt.scatter(coordinates[row_ix, 0], coordinates[row_ix, 1],  marker='+', zorder=1)
     plt.show()
+
+def view(connection, options):
+    subject_id = options.subject_id
+    cursor = connection.cursor()
+    if options.summary:
+        cursor.execute('''
+            SELECT subject_id, count(*), count(DISTINCT source_id)
+            FROM spectra_classification_t 
+            WHERE subject_id = :subject_id
+            ''',
+            {'subject_id': subject_id}
+        )
+        header = ("Subject Id", "# Classif.", "# Source Ids")
+    elif options.normal:
+        cursor.execute('''
+            SELECT subject_id, source_id, count(*) 
+            FROM spectra_classification_t 
+            WHERE subject_id = :subject_id
+            GROUP BY source_id
+            ''',
+            {'subject_id': subject_id}
+        )
+        header = ("Subject Id", "Source Id", "# Classif.")
+    elif options.detail:
+        cursor.execute('''
+            SELECT subject_id, source_id, source_x, source_y, spectrum_type
+            FROM spectra_classification_t 
+            WHERE subject_id = :subject_id
+            
+            ''',
+            {'subject_id': subject_id}
+        )
+        header = ("Subject Id", "Source Id", "X", "Y", "Spectrum")
+    paging(
+        iterable = cursor,
+        headers = header,
+    )

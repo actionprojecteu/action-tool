@@ -15,7 +15,11 @@ DESCRIPTION  = 'Deployment tool for Airflow ACTION project pilots',
 LICENSE      = 'MIT'
 KEYWORDS     = 'Astronomy Python CitizenScience LightPollution'
 URL          = 'https://github.com/actionprojecteu/action-tool/'
-DEPENDENCIES = ["matplotlib","scikit-learn"]
+DEPENDENCIES = [
+    "matplotlib",
+    "scikit-learn",
+    'tabulate',
+]
 
 CLASSIFIERS  = [
     'Environment :: Console',

@@ -104,17 +104,24 @@ def createParser():
 	# --------------------------
 
 	subparser = parser.add_subparsers(dest='command')
-	parser_clusters = subparser.add_parser('clusters',     help='Plot clusters')
+	parser_sources = subparser.add_parser('sources', help='sources commands')
 
 	# ---------------------------------------------
 	# Create second level parser for 'plot'
 	# ---------------------------------------------
 
-	subparser = parser_clusters.add_subparsers(dest='subcommand')
+	subparser = parser_sources.add_subparsers(dest='subcommand')
 
-	ppclu = subparser.add_parser('plot', help='Plot clusters for a given subject set')
-	ppclu.add_argument('--subject-id',  type=str, help='Subject id')
-	ppclu.add_argument('--radius',  type=float, default=13, help='Cluster search radius')
+	soplot = subparser.add_parser('plot', help='Plot light sources with clustering for a given subject')
+	soplot.add_argument('--subject-id',  type=int, required=True, help='Subject id')
+	soplot.add_argument('--radius',      type=float, default=13, help='Cluster search radius')
+
+	sosum = subparser.add_parser('view', help='Display sources summary for a given subject')
+	sosum.add_argument('--subject-id',  type=int, required=True, help='Subject id')
+	group = sosum.add_mutually_exclusive_group(required=True)
+	group.add_argument('--summary', action='store_true', help='Summary view.')
+	group.add_argument('--normal', action='store_true', help='Normal view.')
+	group.add_argument('--detail',   action='store_true', help='Detailed view')
 
 	return parser
 
