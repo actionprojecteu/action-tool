@@ -106,9 +106,27 @@ def createParser():
 	subparser = parser.add_subparsers(dest='command')
 	parser_sources = subparser.add_parser('sources', help='sources commands')
 
-	# ---------------------------------------------
-	# Create second level parser for 'plot'
-	# ---------------------------------------------
+	parser_users = subparser.add_parser('users', help='users commands')
+
+	# --------------------------------------
+	# Create second level parser for 'users'
+	# --------------------------------------
+
+	subparser = parser_users.add_subparsers(dest='subcommand')
+	usview = subparser.add_parser('view', help='Display sources summary for a given subject')
+	group1 = usview.add_mutually_exclusive_group(required=True)
+	group1.add_argument('--all', action='store_true', help='All users')
+	group1.add_argument('--anonymous', action='store_true', help='Only anonymous users')
+	group1.add_argument('--registered', action='store_true', help='Only anonymous users')
+	group2 = usview.add_mutually_exclusive_group(required=True)
+	group2.add_argument('--summary', action='store_true', help='How many users have participated.')
+	group2.add_argument('--classif', action='store_true', help='Show classifications per user.')
+	
+	
+
+	# ----------------------------------------
+	# Create second level parser for 'sources'
+	# ----------------------------------------
 
 	subparser = parser_sources.add_subparsers(dest='subcommand')
 

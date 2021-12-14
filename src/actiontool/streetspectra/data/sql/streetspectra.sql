@@ -56,7 +56,8 @@ CREATE TABLE IF NOT EXISTS spectra_classification_t
     classification_id   INTEGER, -- unique Zooinverse classification identifier
     subject_id          INTEGER, -- Zooinverse image id subject of classification
     workflow_id         INTEGER, -- Workflow that produced this classification
-    user_id             INTEGER, -- not NULL for registered users
+    user_id             INTEGER, -- not NULL for registered users, NULL for anonymous users
+    user_ip             TEXT,    -- used only in case of anonymous users
     started_at          TEXT,    -- Classification UTC start timestamp, IS08601 format
     finished_at         TEXT,    -- Classification UTC end timestamp, IS08601 format
     width               INTEGER, -- image width
