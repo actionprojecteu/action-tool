@@ -52,6 +52,23 @@ def purge(connection, options):
     )
     connection.commit()
 
+def duplicates(connection, options):
+    cursor = connection.cursor()
+    cursor.execute('''
+       SELECT a.subject_id, a.source_id, b.source_id, a.source_x, a.source_y
+       FROM spectra_classification_t AS a
+       JOIN spectra_classification_t AS b 
+       ON a.subject_id = b.subject_id AND a.source_x = b.source_x AND a.source_y = b.source_y
+       WHERE a.source_id < b.source_id
+       '''
+    )
+    headers = ("Subject Id", "Source Id A", "Source Id B", "X", "Y")
+    paging(
+        iterable = cursor,
+        headers  = headers,
+    )
+
+
 def plot(connection, options):
     '''Perform clustering analysis over source light selection'''
     subject_id = options.subject_id
@@ -92,7 +109,17 @@ def plot(connection, options):
 def view(connection, options):
     subject_id = options.subject_id
     cursor = connection.cursor()
-    if options.summary:
+    if options.all:
+        cursor.execute('''
+            SELECT subject_id, count(*), count(DISTINCT source_id)
+            FROM spectra_classification_t 
+            GROUP BY subject_id
+            ''',
+        )
+        header = ("Subject Id", "# Classif.", "# Source Ids")
+    elif options.summary:
+        if not subject_id:
+            raise ValueError("missing --subject-id")
         cursor.execute('''
             SELECT subject_id, count(*), count(DISTINCT source_id)
             FROM spectra_classification_t 
@@ -102,6 +129,8 @@ def view(connection, options):
         )
         header = ("Subject Id", "# Classif.", "# Source Ids")
     elif options.normal:
+        if not subject_id:
+            raise ValueError("missing --subject-id")
         cursor.execute('''
             SELECT subject_id, source_id, count(*) 
             FROM spectra_classification_t 
@@ -112,6 +141,8 @@ def view(connection, options):
         )
         header = ("Subject Id", "Source Id", "# Classif.")
     elif options.detail:
+        if not subject_id:
+            raise ValueError("missing --subject-id")
         cursor.execute('''
             SELECT subject_id, source_id, source_x, source_y, spectrum_type
             FROM spectra_classification_t 

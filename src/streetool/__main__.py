@@ -118,9 +118,12 @@ def createParser():
 
 	sopur = subparser.add_parser('purge', help='Purge detected source ids')
 
+	sodup = subparser.add_parser('duplicates', help='Purge detected source ids')
+
 	sosum = subparser.add_parser('view', help='Display sources summary for a given subject')
-	sosum.add_argument('--subject-id',  type=int, required=True, help='Subject id')
+	sosum.add_argument('--subject-id',  type=int, default=None, help='Subject id')
 	group = sosum.add_mutually_exclusive_group(required=True)
+	group.add_argument('--all', action='store_true', help='Summary view.')
 	group.add_argument('--summary', action='store_true', help='Summary view.')
 	group.add_argument('--normal', action='store_true', help='Normal view.')
 	group.add_argument('--detail',   action='store_true', help='Detailed view')
