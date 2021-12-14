@@ -84,11 +84,12 @@ streetspectra_feed_test_dag = DAG(
 # -----
 
 
-download_from_action_test = ActionDownloadFromVariableDateOperator(
+download_from_action_test = ActionRangedDownloadOperator(
     task_id        = "download_from_action_test",
     conn_id        = "streetspectra-action-database",
     output_path    = "/tmp/zooniverse/streetspectra/action-{{ds}}.json",
-    variable_name  = "streetspectra_read_tstamp",
+    start_date     = "{{ds}}",
+    end_date       = "{{next_ds}}",
     n_entries      = 10,                                    # ESTO TIENE QUE CAMBIARSE A 500 PARA PRODUCCION
     project        = "street-spectra", 
     obs_type       = "observation",
