@@ -37,12 +37,75 @@ log = logging.getLogger("streetoool")
 # ----------------
 
 
+def plot_cluster(connection, subject_id, img, distance):
+    '''Perform clustering analysis over source light selection'''
+    cursor = connection.cursor()
+    cursor.execute('''
+        SELECT source_x, source_y 
+        FROM spectra_classification_t 
+        WHERE subject_id = :subject_id
+        ''',
+        {'subject_id': subject_id}
+    )
+    coordinates = cursor.fetchall()
+    N_Classifications = len(coordinates)
+    if N_Classifications < 2:
+        log.error(f"No cluster for subject {subject_id} [N = {N_Classifications}]")
+        return
+    coordinates = np.array(coordinates)
+    model = cluster.DBSCAN(eps=distance, min_samples=2)
+    # Fit the model and predict clusters
+    yhat = model.fit_predict(coordinates)
+    # retrieve unique clusters
+    clusters = np.unique(yhat)
+    log.info(f"Subject {subject_id}: {len(clusters)} clusters from {N_Classifications} classifications, ids: {clusters}")
+    plt.title('Detected light sources by clustering')
+    plt.imshow(img, alpha=0.5, zorder=0)
+    # create scatter plot for samples from each cluster
+    for cl in clusters:
+        # get row indexes for samples with this cluster
+        row_ix = np.where(yhat == cl)
+        plt.scatter(coordinates[row_ix, 0], coordinates[row_ix, 1],  marker='o', zorder=1)
+    plt.show()
+
+
+def plot_dbase(connection, subject_id, img):
+    '''Perform clustering analysis over source light selection'''
+    cursor = connection.cursor()
+    cursor.execute('''
+        SELECT DISTINCT source_id 
+        FROM spectra_classification_t 
+        WHERE subject_id = :subject_id
+        ''',
+        {'subject_id': subject_id}
+    )
+    source_ids = cursor.fetchall()
+    log.info(f"SOURCE IDS = {source_ids}")
+    plt.title('Light Sources from database')
+    plt.imshow(img, alpha=0.5, zorder=0)
+    for (source_id,) in source_ids:
+        cursor2 = connection.cursor()
+        cursor2.execute('''
+            SELECT source_x, source_y  
+            FROM spectra_classification_t 
+            WHERE subject_id = :subject_id
+            AND source_id = :source_id
+            ''',
+            {'subject_id': subject_id, 'source_id': source_id}
+        )        
+        coordinates = cursor2.fetchall()
+        N_Classifications = len(coordinates)
+        log.info(f"Subject {subject_id}: source_id {source_id} has {N_Classifications} data points")
+        X, Y = tuple(zip(*coordinates))
+        plt.scatter(X, Y,  marker='o', zorder=1)
+    plt.show()
+
 # ========
 # COMMANDS
 # ========
 
 def purge(connection, options):
-    log.info("Purgin all source ids from the database")
+    log.info("Purging all source ids from the database")
     cursor = connection.cursor()
     cursor.execute('''
        UPDATE spectra_classification_t 
@@ -77,34 +140,10 @@ def plot(connection, options):
         log.error(f"No image for subject-id {subject_id}")
         return
     img = plt.imread(filename)
-    cursor = connection.cursor()
-    cursor.execute('''
-        SELECT source_x, source_y 
-        FROM spectra_classification_t 
-        WHERE subject_id = :subject_id
-        ''',
-        {'subject_id': subject_id}
-    )
-    coordinates = cursor.fetchall()
-    N_Classifications = len(coordinates)
-    if N_Classifications < 2:
-        log.error(f"No cluster for subject {subject_id} [N = {N_Classifications}]")
-        return
-
-    coordinates = np.array(coordinates)
-    model = cluster.DBSCAN(eps=options.radius, min_samples=2)
-    # Fit the model and predict clusters
-    yhat = model.fit_predict(coordinates)
-    # retrieve unique clusters
-    clusters = np.unique(yhat)
-    log.info(f"Subject {subject_id}: {len(clusters)} clusters from {N_Classifications} classifications, ids: {clusters}")
-    plt.imshow(img, alpha=0.5, zorder=0)
-    # create scatter plot for samples from each cluster
-    for cl in clusters:
-        # get row indexes for samples with this cluster
-        row_ix = np.where(yhat == cl)
-        plt.scatter(coordinates[row_ix, 0], coordinates[row_ix, 1],  marker='+', zorder=1)
-    plt.show()
+    if options.compute:
+        plot_cluster(connection, subject_id, img, options.distance)
+    else:
+        plot_dbase(connection, subject_id, img)
 
 def view(connection, options):
     subject_id = options.subject_id

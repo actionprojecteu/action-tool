@@ -114,7 +114,8 @@ def createParser():
 
 	soplot = subparser.add_parser('plot', help='Plot light sources with clustering for a given subject')
 	soplot.add_argument('--subject-id',  type=int, required=True, help='Subject id')
-	soplot.add_argument('--radius',      type=float, default=13, help='Cluster search radius')
+	soplot.add_argument('--distance',    type=float, default=30, help='Cluster max distance between points')
+	soplot.add_argument('--compute', action='store_true', help='Ciompute clusteres else read from database')
 
 	sopur = subparser.add_parser('purge', help='Purge detected source ids')
 
