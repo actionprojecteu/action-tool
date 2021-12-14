@@ -76,6 +76,7 @@ def plot_dbase(connection, subject_id, img):
         SELECT DISTINCT source_id 
         FROM spectra_classification_t 
         WHERE subject_id = :subject_id
+        ORDER BY source_id ASC
         ''',
         {'subject_id': subject_id}
     )
