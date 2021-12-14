@@ -41,6 +41,17 @@ log = logging.getLogger("streetoool")
 # COMMANDS
 # ========
 
+def purge(connection, options):
+    log.info("Purgin all source ids from the database")
+    cursor = connection.cursor()
+    cursor.execute('''
+       UPDATE spectra_classification_t 
+       SET source_id = NULL , aggregated = NULL 
+       WHERE source_id IS NOT NULL;
+       '''
+    )
+    connection.commit()
+
 def plot(connection, options):
     '''Perform clustering analysis over source light selection'''
     subject_id = options.subject_id

@@ -1,3 +1,9 @@
+#  Inmediato
+* Parametro de radius en el AggregateOperator
+* quitar el calculo de ñla kappa de fleish por que no aporta nada
+* guradar sin mas las clasificaciones
+* deshacer el cluster -1 en aportacione indicuduales con otros source id
+
 # Incoporar la generacion de mapas y copiarlos al sitio web de GUAIX o lo que sea
 
 from airflow.providers.ssh.operators.ssh import SSHOperator

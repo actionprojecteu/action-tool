@@ -116,6 +116,8 @@ def createParser():
 	soplot.add_argument('--subject-id',  type=int, required=True, help='Subject id')
 	soplot.add_argument('--radius',      type=float, default=13, help='Cluster search radius')
 
+	sopur = subparser.add_parser('purge', help='Purge detected source ids')
+
 	sosum = subparser.add_parser('view', help='Display sources summary for a given subject')
 	sosum.add_argument('--subject-id',  type=int, required=True, help='Subject id')
 	group = sosum.add_mutually_exclusive_group(required=True)

@@ -41,7 +41,8 @@ PACKAGE_DATA = {
 }
 
 SCRIPTS = [
-    "scripts/actiontool"
+    "scripts/actiontool",
+    "scripts/streetool",
 ]
 
 
