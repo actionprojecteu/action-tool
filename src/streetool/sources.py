@@ -36,9 +36,6 @@ log = logging.getLogger("streetoool")
 # Module constants
 # ----------------
 
-def shifted(seq):
-        return (seq[1:] + [-1]) if seq[0] == -1 else seq
-
 def plot_cluster(connection, subject_id, img, distance):
     '''Perform clustering analysis over source light selection'''
     cursor = connection.cursor()
@@ -51,9 +48,6 @@ def plot_cluster(connection, subject_id, img, distance):
     )
     coordinates = cursor.fetchall()
     N_Classifications = len(coordinates)
-    if N_Classifications < 2:
-        log.error(f"No cluster for subject {subject_id} [N = {N_Classifications}]")
-        return
     coordinates = np.array(coordinates)
     model = cluster.DBSCAN(eps=distance, min_samples=2)
     # Fit the model and predict clusters
@@ -61,10 +55,10 @@ def plot_cluster(connection, subject_id, img, distance):
     # retrieve unique clusters
     clusters = np.unique(yhat)
     log.info(f"Subject {subject_id}: {len(clusters)} clusters from {N_Classifications} classifications, ids: {clusters}")
-    plt.title('Detected light sources by clustering')
+    plt.title(f'Detected light sources by DBSCAN clustering (eps = {distance} px)')
     plt.imshow(img, alpha=0.5, zorder=0)
     # create scatter plot for samples from each cluster
-    for cl in shifted(clusters):
+    for cl in clusters:
         # get row indexes for samples with this cluster
         row_ix = np.where(yhat == cl)
         plt.scatter(coordinates[row_ix, 0], coordinates[row_ix, 1],  marker='o', zorder=1)
@@ -83,8 +77,7 @@ def plot_dbase(connection, subject_id, img):
         {'subject_id': subject_id}
     )
     source_ids = cursor.fetchall()
-    log.info(f"SOURCE IDS = {source_ids}")
-    plt.title('Light Sources from database')
+    plt.title('Light Sources read from the database')
     plt.imshow(img, alpha=0.5, zorder=0)
     for (source_id,) in source_ids:
         cursor2 = connection.cursor()

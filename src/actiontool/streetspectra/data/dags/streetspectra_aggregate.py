@@ -160,7 +160,7 @@ skip_to_end = DummyOperator(
 aggregate_classifications = AggregateOperator(
     task_id    = "aggregate_classifications",
     conn_id    = "streetspectra-db",
-    distance   = 30,    # max distance to belong to a cluster
+    distance   = 25,    # max distance to belong to a cluster
     dag        = streetspectra_aggregate_dag,
 )
 
