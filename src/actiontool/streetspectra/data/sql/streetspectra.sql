@@ -130,9 +130,9 @@ CREATE TABLE IF NOT EXISTS spectra_aggregate_t
     height              INTEGER, -- image height
     source_x            REAL,    -- average light source x coordinate within the image
     source_y            REAL,    -- average light source y coordinate within the image
-    spectrum_type       TEXT,    -- spectrum type mode (statistics), One of (LED, MV, HPS, LPS, MH, None) or 'Ambiguous' if such mode do not exists
-    spectrum_count      INTEGER, -- classification count for this particular light source
-    spectrum_users      INTEGER, -- number of users for the whole subject set. Percent agreement is (spectrum_count/spectrum_users)
+    spectrum_mode       TEXT,    -- spectrum type mode (statistics), One of (LED, MV, HPS, LPS, MH, NULL)
+    spectrum_max        INTEGER, -- max classification count for the spectrum mode
+    source_count        INTEGER, -- number of users for the whole subject set. Percent agreement is (spectrum_max/source_count)
     spectrum_dist       TEXT,    -- classification distribution made by the users for a given light source
     rejection_tag       TEXT,    -- When spectrum_type is NULL, shows the reason why
     image_id            INTEGER, -- observing platform image Id
