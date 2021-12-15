@@ -65,11 +65,11 @@ CREATE TABLE IF NOT EXISTS spectra_classification_t
     source_id           INTEGER, -- light source identifier pointed to by user within the subject. Initially NULL
     source_x            REAL,    -- light source x coordinate within the image
     source_y            REAL,    -- light source y coordinate within the image
-    spectrum_x          REAL,    -- spectrum box corner point, x coordinate
+    /*spectrum_x          REAL,    -- spectrum box corner point, x coordinate
     spectrum_y          REAL,    -- spectrum box corner point, y coordinate
     spectrum_width      REAL,    -- spectrum box width
     spectrum_height     REAL,    -- spectrum box height
-    spectrum_angle      REAL,    -- spectrum box angle (degrees) (respect to X axis?)
+    spectrum_angle      REAL,    -- spectrum box angle (degrees) (respect to X axis?)*/
     spectrum_type       TEXT,    -- spectrum type ('HPS','MV','LED','MH')
     image_id            INTEGER, -- observing platform image Id
     image_url           TEXT,    -- observing platform image URL
