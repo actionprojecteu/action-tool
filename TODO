@@ -1,15 +1,6 @@
 #  Inmediato
 
-* Diseñar un nuevo workflow en Zooniverse y anotar si nombre e id
-* DAG de prueba miniatra para cargar 10 imagenes y 5 clasificadores
-- connection ifd de zooniverse de prueba y real para la MomgoDB
-* Generqar casos de pruebas
-- Seleccion de 1, 3 5 y 7 source_ids por subject_id
-* Rediseñar el proeso de transofrmqcionde JSON, sin cargar a ninguna tabla
-* Redideñar la BBDD
-- maestroio/detalle. Generar vista para las consultas
-- la streetool tambien querda afectada :-(
-
+* Revisar la clasificacion, que está mal ys simepre saca 'MV'
 
 # Incoporar la generacion de mapas y copiarlos al sitio web de GUAIX o lo que sea
 

@@ -33,12 +33,17 @@ log = logging.getLogger("streetoool")
 def dynamic_sql(options):
     columns = list()
     headers = list()
+    where = ""
     if options.workflow:
         columns.append("workflow_id")
         headers.append("Workflow Id")
     if options.user:
         columns.append("user_id")
         headers.append("User Id")
+    elif options.anon_user:
+        columns.append("user_ip")
+        headers.append("User IP")
+        where = "WHERE user_id IS NULL"
     if options.subject:
         columns.append("subject_id")
         headers.append("Subject Id")
@@ -51,7 +56,7 @@ def dynamic_sql(options):
     if len(columns) == 0:
         raise ValueError("At least one --<flag> must be specified")
     headers.append("# Classif")
-    sql = f"SELECT {','.join(columns)}, COUNT(*) FROM  spectra_classification_v GROUP BY {','.join(columns)} ORDER BY {','.join(columns)}"
+    sql = f"SELECT {','.join(columns)}, COUNT(*) FROM  spectra_classification_v {where} GROUP BY {','.join(columns)} ORDER BY {','.join(columns)}"
     return sql, headers
 
 # ========
