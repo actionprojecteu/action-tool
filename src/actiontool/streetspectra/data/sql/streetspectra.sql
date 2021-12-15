@@ -62,15 +62,6 @@ CREATE TABLE IF NOT EXISTS spectra_classification_t
     finished_at         TEXT,    -- Classification UTC end timestamp, IS08601 format
     width               INTEGER, -- image width
     height              INTEGER, -- image height
-    source_id           INTEGER, -- light source identifier pointed to by user within the subject. Initially NULL
-    source_x            REAL,    -- light source x coordinate within the image
-    source_y            REAL,    -- light source y coordinate within the image
-    /*spectrum_x          REAL,    -- spectrum box corner point, x coordinate
-    spectrum_y          REAL,    -- spectrum box corner point, y coordinate
-    spectrum_width      REAL,    -- spectrum box width
-    spectrum_height     REAL,    -- spectrum box height
-    spectrum_angle      REAL,    -- spectrum box angle (degrees) (respect to X axis?)*/
-    spectrum_type       TEXT,    -- spectrum type ('HPS','MV','LED','MH')
     image_id            INTEGER, -- observing platform image Id
     image_url           TEXT,    -- observing platform image URL
     image_long          REAL,    -- image aprox. longitude
@@ -80,12 +71,50 @@ CREATE TABLE IF NOT EXISTS spectra_classification_t
     image_source        TEXT,    -- observing platform name (currently "Epicollect 5")
     image_created_at    TEXT,    -- image creation UTC timestamp, ISO8601 format
     image_spectrum      TEXT,    -- spectrum type, if any, given by observer to his intended target (which we really don't know)
-    -- other management columns
-    aggregated          INTEGER, -- 1 if passed through the aggregation process, NULL otherwise
 
     PRIMARY KEY(classification_id)
 );
 
+
+CREATE TABLE IF NOT EXISTS light_sources_t
+(
+    classification_id   INTEGER, -- unique Zooinverse classification identifier
+    source_id           INTEGER, -- light source identifier pointed to by user within the subject. Initially NULL
+    source_x            REAL,    -- light source x coordinate within the image
+    source_y            REAL,    -- light source y coordinate within the image
+    spectrum_type       TEXT,    -- spectrum type ('HPS','MV','LED','MH')    
+    aggregated          INTEGER, -- 1 if passed through the aggregation process, NULL otherwise
+
+    FOREIGN KEY(classification_id)     REFERENCES spectra_classification_t(classification_id)
+);
+
+CREATE VIEW IF NOT EXISTS spectra_classification_v
+AS SELECT
+    s.classification_id,
+    s.subject_id , 
+    s.workflow_id, 
+    s.user_id,  
+    s.user_ip, 
+    s.started_at, 
+    s.finished_at, 
+    s.width,  
+    s.height, 
+    s.image_id, 
+    s.image_url, 
+    s.image_long, 
+    s.image_lat, 
+    s.image_observer, 
+    s.image_comment, 
+    s.image_source,  
+    s.image_created_at, 
+    s.image_spectrum,
+    l.source_id,
+    l.source_x,
+    l.source_y,
+    l.spectrum_type,
+    l.aggregated
+FROM spectra_classification_t AS s
+JOIN light_sources_t AS l USING(classification_id);
 
 ------------------------------------------------------------------------
 -- This is the table where we store all StreetSpectra aggregate
