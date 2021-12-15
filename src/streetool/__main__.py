@@ -105,8 +105,22 @@ def createParser():
 
 	subparser = parser.add_subparsers(dest='command')
 	parser_sources = subparser.add_parser('sources', help='sources commands')
-
 	parser_users = subparser.add_parser('users', help='users commands')
+	parser_classif = subparser.add_parser('classifications', help='classifications commands')
+
+	# ------------------------------------------------
+	# Create second level parser for 'classifications'
+	# -----------------------------------------------
+
+
+	subparser = parser_classif.add_subparsers(dest='subcommand')
+	classif = subparser.add_parser('view', help='Display sources summary for a given subject')
+	classif.add_argument('--workflow', action='store_true', help='Show classifications per workflow.')
+	classif.add_argument('--user', action='store_true', help='Show classifications per user.')
+	classif.add_argument('--subject', action='store_true', help='Show classifications per subject.')
+	classif.add_argument('--classification', action='store_true', help='Show classifications per classification.')
+	classif.add_argument('--source', action='store_true', help='Show classifications per source.')
+
 
 	# --------------------------------------
 	# Create second level parser for 'users'
