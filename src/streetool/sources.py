@@ -36,6 +36,8 @@ log = logging.getLogger("streetoool")
 # Module constants
 # ----------------
 
+def shifted(seq):
+        return (seq[1:] + [-1]) if seq[0] == -1 else seq
 
 def plot_cluster(connection, subject_id, img, distance):
     '''Perform clustering analysis over source light selection'''
@@ -62,7 +64,7 @@ def plot_cluster(connection, subject_id, img, distance):
     plt.title('Detected light sources by clustering')
     plt.imshow(img, alpha=0.5, zorder=0)
     # create scatter plot for samples from each cluster
-    for cl in clusters:
+    for cl in shifted(clusters):
         # get row indexes for samples with this cluster
         row_ix = np.where(yhat == cl)
         plt.scatter(coordinates[row_ix, 0], coordinates[row_ix, 1],  marker='o', zorder=1)
