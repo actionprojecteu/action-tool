@@ -44,7 +44,7 @@ def plot_cluster(connection, subject_id, img, distance):
     cursor = connection.cursor()
     cursor.execute('''
         SELECT source_x, source_y 
-        FROM spectra_classification_t 
+        FROM spectra_classification_v 
         WHERE subject_id = :subject_id
         ''',
         {'subject_id': subject_id}
@@ -76,7 +76,7 @@ def plot_dbase(connection, subject_id, img):
     cursor = connection.cursor()
     cursor.execute('''
         SELECT DISTINCT source_id 
-        FROM spectra_classification_t 
+        FROM spectra_classification_v 
         WHERE subject_id = :subject_id
         ORDER BY source_id ASC
         ''',
@@ -90,7 +90,7 @@ def plot_dbase(connection, subject_id, img):
         cursor2 = connection.cursor()
         cursor2.execute('''
             SELECT source_x, source_y  
-            FROM spectra_classification_t 
+            FROM spectra_classification_v 
             WHERE subject_id = :subject_id
             AND source_id = :source_id
             ''',
@@ -111,7 +111,7 @@ def purge(connection, options):
     log.info("Purging all source ids from the database")
     cursor = connection.cursor()
     cursor.execute('''
-       UPDATE spectra_classification_t 
+       UPDATE light_sources_t 
        SET source_id = NULL , aggregated = NULL 
        WHERE source_id IS NOT NULL;
        '''
@@ -122,8 +122,8 @@ def duplicates(connection, options):
     cursor = connection.cursor()
     cursor.execute('''
        SELECT a.subject_id, a.source_id, b.source_id, a.source_x, a.source_y
-       FROM spectra_classification_t AS a
-       JOIN spectra_classification_t AS b 
+       FROM spectra_classification_v AS a
+       JOIN spectra_classification_v AS b 
        ON a.subject_id = b.subject_id AND a.source_x = b.source_x AND a.source_y = b.source_y
        WHERE a.source_id < b.source_id
        '''
