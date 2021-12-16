@@ -51,29 +51,60 @@ class Cycler:
         self.axe = axe
         # The dimensions are [left, bottom, width, height]
         # All quantities are in fractions of figure width and height.
-        axprev = fig.add_axes([0.79, 0.01, 0.095, 0.050])
         axnext = fig.add_axes([0.90, 0.01, 0.095, 0.050])
-        bnext = Button(axnext, 'Next')
-        bnext.on_clicked(self.next)
-        bprev = Button(axprev, 'Previous')
-        bprev.on_clicked(self.prev)
+        self.bnext = Button(axnext, 'Next')
+        self.bnext.on_clicked(self.next)
+        axprev = fig.add_axes([0.79, 0.01, 0.095, 0.050])
+        self.bprev = Button(axprev, 'Previous')
+        self.bprev.on_clicked(self.prev)
         axe.set_xlabel("X, pixels")
         axe.set_ylabel("Y, pixels")
         self.epsilon = kwargs.get('epsilon',1)
         self.compute = kwargs.get('compute',False)
         self.fix     = kwargs.get('fix',False)
-        self.one_compute_step(0)
-    
-        
-    def one_database_step(self, i):
+        if self.compute:
+            self.one_compute_step(0)
+        else:
+            self.one_database_step(0)
+
+
+    def load(self, i):
         subject_id = self.subject[i][0]
         log.info(f"Searching for image whose subject id is {subject_id}")
         filename = get_image(self.conn, subject_id)
         if not filename:
             raise Exception(f"No image for subject-id {subject_id}")
         img = plt.imread(filename)
+        log.info(f"IMG SHAPE {img.shape}")
+        self.axe.imshow(img, alpha=0.5, zorder=0, origin='upper')
+        return subject_id
+
+
+    def next(self, event):
+        log.info("Next clicked")
+        self.i = (self.i +1) % self.N
+        if self.compute:
+            self.one_compute_step(self.i)
+        else:
+            self.one_database_step(self.i)
+        self.fig.canvas.draw_idle()
+        self.fig.canvas.flush_events()
+
+
+    def prev(self, event):
+        log.info("Previous clicked")
+        self.i = (self.i -1 + self.N) % self.N
+        if self.compute:
+            self.one_compute_step(self.i)
+        else:
+            self.one_database_step(self.i)
+        self.fig.canvas.draw_idle()
+        self.fig.canvas.flush_events()
+
+        
+    def one_database_step(self, i):
+        subject_id = self.load(i)
         self.axe.set_title(f'Subject {subject_id}\nLight Sources from the database')
-        self.axe.imshow(img, alpha=0.5, zorder=0)
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT DISTINCT cluster_id 
@@ -101,20 +132,14 @@ class Cycler:
             Xc = statistics.mean(X); Yc = statistics.mean(Y);
             self.axe.scatter(X, Y,  marker='o', zorder=1)
             self.axe.text(Xc+EPS[0], Yc+EPS[0], cluster_id, fontsize=9, zorder=2)
-        plt.draw()
+        
 
-
+    
     def one_compute_step(self, i):
         fix = self.fix
         epsilon = self.epsilon
-        subject_id = self.subject[i][0]
-        log.info(f"Searching for image whose subject id is {subject_id}")
-        filename = get_image(self.conn, subject_id)
-        if not filename:
-            raise Exception(f"No image for subject-id {subject_id}")
-        img = plt.imread(filename)
+        subject_id = self.load(i)
         self.axe.set_title(f'Subject {subject_id}\nDetected light sources by DBSCAN (\u03B5 = {epsilon} px)')
-        self.axe.imshow(img, alpha=0.5, zorder=0)
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT source_x, source_y 
@@ -151,18 +176,9 @@ class Cycler:
                 start = max(clusters)+2 # we will shift also the normal ones ...
                 for i in range(len(X)) :
                     self.axe.text(X[i]+epsilon, Y[i]+epsilon, cl, fontsize=9, zorder=2)
-        plt.draw()
 
 
-    def next(self, event):
-        log.info("Next clicked")
-        #self.i = (self.i +1) % self.N
-        #self.one_step(self.i)
-
-    def prev(self, event):
-        log.info("Previous clicked")
-        #self.i = (self.i -1 + self.N) % self.N
-        #self.one_step(self.i) 
+    
 
 
 
@@ -357,6 +373,7 @@ def plot(connection, options):
             epsilon = options.epsilon,
             fix     = options.fix
         )
+    log.info("ENTRAMOS EN EL BUCLE PPAL")
     plt.show()
 
 def view(connection, options):
