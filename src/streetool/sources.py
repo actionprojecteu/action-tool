@@ -69,29 +69,29 @@ def plot_dbase(connection, subject_id, img):
     '''Perform clustering analysis over source light selection'''
     cursor = connection.cursor()
     cursor.execute('''
-        SELECT DISTINCT source_id 
+        SELECT DISTINCT cluster_id 
         FROM spectra_classification_v 
         WHERE subject_id = :subject_id
-        ORDER BY source_id ASC
+        ORDER BY cluster_id ASC
         ''',
         {'subject_id': subject_id}
     )
-    source_ids = cursor.fetchall()
+    cluster_ids = cursor.fetchall()
     plt.title('Light Sources read from the database')
     plt.imshow(img, alpha=0.5, zorder=0)
-    for (source_id,) in source_ids:
+    for (cluster_id,) in cluster_ids:
         cursor2 = connection.cursor()
         cursor2.execute('''
             SELECT source_x, source_y  
             FROM spectra_classification_v 
             WHERE subject_id = :subject_id
-            AND source_id = :source_id
+            AND cluster_id = :cluster_id
             ''',
-            {'subject_id': subject_id, 'source_id': source_id}
+            {'subject_id': subject_id, 'cluster_id': cluster_id}
         )        
         coordinates = cursor2.fetchall()
         N_Classifications = len(coordinates)
-        log.info(f"Subject {subject_id}: source_id {source_id} has {N_Classifications} data points")
+        log.info(f"Subject {subject_id}: cluster_id {cluster_id} has {N_Classifications} data points")
         X, Y = tuple(zip(*coordinates))
         plt.scatter(X, Y,  marker='o', zorder=1)
     plt.show()
@@ -105,8 +105,8 @@ def purge(connection, options):
     cursor = connection.cursor()
     cursor.execute('''
        UPDATE light_sources_t 
-       SET source_id = NULL , aggregated = NULL 
-       WHERE source_id IS NOT NULL;
+       SET cluster_id = NULL , aggregated = NULL 
+       WHERE cluster_id IS NOT NULL;
        '''
     )
     connection.commit()
@@ -114,11 +114,11 @@ def purge(connection, options):
 def duplicates(connection, options):
     cursor = connection.cursor()
     cursor.execute('''
-       SELECT a.subject_id, a.source_id, b.source_id, a.source_x, a.source_y
+       SELECT a.subject_id, a.cluster_id, b.cluster_id, a.source_x, a.source_y
        FROM spectra_classification_v AS a
        JOIN spectra_classification_v AS b 
        ON a.subject_id = b.subject_id AND a.source_x = b.source_x AND a.source_y = b.source_y
-       WHERE a.source_id < b.source_id
+       WHERE a.cluster_id < b.cluster_id
        '''
     )
     headers = ("Subject Id", "Source Id A", "Source Id B", "X", "Y")
@@ -146,7 +146,7 @@ def view(connection, options):
     cursor = connection.cursor()
     if options.all:
         cursor.execute('''
-            SELECT subject_id, count(*), count(DISTINCT source_id)
+            SELECT subject_id, count(*), count(DISTINCT cluster_id)
             FROM spectra_classification_t 
             GROUP BY subject_id
             ''',
@@ -156,7 +156,7 @@ def view(connection, options):
         if not subject_id:
             raise ValueError("missing --subject-id")
         cursor.execute('''
-            SELECT subject_id, count(*), count(DISTINCT source_id)
+            SELECT subject_id, count(*), count(DISTINCT cluster_id)
             FROM spectra_classification_t 
             WHERE subject_id = :subject_id
             ''',
@@ -167,10 +167,10 @@ def view(connection, options):
         if not subject_id:
             raise ValueError("missing --subject-id")
         cursor.execute('''
-            SELECT subject_id, source_id, count(*) 
+            SELECT subject_id, cluster_id, count(*) 
             FROM spectra_classification_t 
             WHERE subject_id = :subject_id
-            GROUP BY source_id
+            GROUP BY cluster_id
             ''',
             {'subject_id': subject_id}
         )
@@ -179,7 +179,7 @@ def view(connection, options):
         if not subject_id:
             raise ValueError("missing --subject-id")
         cursor.execute('''
-            SELECT subject_id, source_id, source_x, source_y, spectrum_type
+            SELECT subject_id, cluster_id, source_x, source_y, spectrum_type
             FROM spectra_classification_t 
             WHERE subject_id = :subject_id
             

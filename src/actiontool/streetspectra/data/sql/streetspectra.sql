@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS spectra_classification_t
     finished_at         TEXT,    -- Classification UTC end timestamp, IS08601 format
     width               INTEGER, -- image width
     height              INTEGER, -- image height
+    -- Metadata coming from the observation platform (i.e Epicollect 5)
     image_id            INTEGER, -- observing platform image Id
     image_url           TEXT,    -- observing platform image URL
     image_long          REAL,    -- image aprox. longitude
@@ -79,7 +80,7 @@ CREATE TABLE IF NOT EXISTS spectra_classification_t
 CREATE TABLE IF NOT EXISTS light_sources_t
 (
     classification_id   INTEGER, -- unique Zooinverse classification identifier
-    source_id           INTEGER, -- light source identifier pointed to by user within the subject. Initially NULL
+    cluster_id          INTEGER, -- light source identifier pointed to by user within the subject. Initially NULL
     source_x            REAL,    -- light source x coordinate within the image
     source_y            REAL,    -- light source y coordinate within the image
     spectrum_type       TEXT,    -- spectrum type ('HPS','MV','LED','MH')    
@@ -108,7 +109,7 @@ AS SELECT
     s.image_source,  
     s.image_created_at, 
     s.image_spectrum,
-    l.source_id,
+    l.cluster_id,
     l.source_x,
     l.source_y,
     l.spectrum_type,
@@ -125,16 +126,18 @@ JOIN light_sources_t AS l USING(classification_id);
 CREATE TABLE IF NOT EXISTS spectra_aggregate_t
 (
     subject_id          INTEGER, -- Zooinverse image id subject of classification
-    source_id           INTEGER, -- light source identifier pointed to by user within the subject.
+    cluster_id          INTEGER, -- light source identifier pointed to by user within the subject.
     width               INTEGER, -- image width
     height              INTEGER, -- image height
     source_x            REAL,    -- average light source x coordinate within the image
     source_y            REAL,    -- average light source y coordinate within the image
-    spectrum_mode       TEXT,    -- spectrum type mode (statistics), One of (LED, MV, HPS, LPS, MH, NULL)
-    spectrum_max        INTEGER, -- max classification count for the spectrum mode
-    source_count        INTEGER, -- number of users for the whole subject set. Percent agreement is (spectrum_max/source_count)
+    spectrum_type       TEXT,    -- spectrum type mode (statistics), One of ('LED', 'MV', 'HPS', 'LPS', 'MH') or NULL
+    spectrum_absfreq    INTEGER, -- absolute frequency for the spectrum statistics mode
     spectrum_dist       TEXT,    -- classification distribution made by the users for a given light source
+    cluster_size        INTEGER, -- Number of individual (x,y) points that belongs to the same light source, treated as a cluster 
+    eps                 REAL,    -- DBSCAN's eps pàrameter. The maximum distance between two samples for one to be considered as in the neighborhood of the other. 
     rejection_tag       TEXT,    -- When spectrum_type is NULL, shows the reason why
+    -- Metadata coming from the observation platform (i.e Epicollect 5)
     image_id            INTEGER, -- observing platform image Id
     image_url           TEXT,    -- observing platform image URL
     image_long          REAL,    -- image aprox. longitude
@@ -145,7 +148,7 @@ CREATE TABLE IF NOT EXISTS spectra_aggregate_t
     image_created_at    TEXT,    -- image creation UTC timestamp in iso 8601 format, with trailing Z
     image_spectrum      TEXT,    -- spectrum type, if any, given by observer to his intended target (which we really don't know)
 
-    PRIMARY KEY(subject_id, source_id)
+    PRIMARY KEY(subject_id, cluster_id)
 );
 
 

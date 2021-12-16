@@ -51,7 +51,7 @@ def dynamic_sql(options):
         columns.append("classification_id")
         headers.append("Classification Id")
     if options.source:
-        columns.append("source_id")
+        columns.append("cluster_id")
         headers.append("Source Id")
     if len(columns) == 0:
         raise ValueError("At least one --<flag> must be specified")
