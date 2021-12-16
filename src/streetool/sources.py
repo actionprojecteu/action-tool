@@ -13,6 +13,7 @@
 import os
 import os.path
 import logging
+import statistics
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -36,7 +37,7 @@ log = logging.getLogger("streetoool")
 # Module constants
 # ----------------
 
-def plot_cluster(connection, subject_id, img, distance):
+def plot_cluster(connection, subject_id, img, epsilon, fix=False):
     '''Perform clustering analysis over source light selection'''
     cursor = connection.cursor()
     cursor.execute('''
@@ -49,19 +50,95 @@ def plot_cluster(connection, subject_id, img, distance):
     coordinates = cursor.fetchall()
     N_Classifications = len(coordinates)
     coordinates = np.array(coordinates)
-    model = cluster.DBSCAN(eps=distance, min_samples=2)
+    model = cluster.DBSCAN(eps=epsilon, min_samples=2)
     # Fit the model and predict clusters
     yhat = model.fit_predict(coordinates)
     # retrieve unique clusters
     clusters = np.unique(yhat)
     log.info(f"Subject {subject_id}: {len(clusters)} clusters from {N_Classifications} classifications, ids: {clusters}")
-    plt.title(f'Detected light sources by DBSCAN clustering (eps = {distance} px)')
+    plt.title(f'Subject {subject_id}\nDetected light sources by DBSCAN (\u03B5 = {epsilon} px)')
+    plt.xlabel("X Coordinates")
+    plt.ylabel("Y Coordinates")
     plt.imshow(img, alpha=0.5, zorder=0)
+  
+    if fix:
     # create scatter plot for samples from each cluster
+        for cl in clusters:
+            # get row indexes for samples with this cluster
+            row_ix = np.where(yhat == cl)
+            X = coordinates[row_ix, 0][0]; Y = coordinates[row_ix, 1][0]
+            if(cl != -1):
+                Xc = np.average(X); Yc = np.average(Y)
+                plt.scatter(X, Y,  marker='o', zorder=1)
+                plt.text(Xc+epsilon, Yc+epsilon, cl, fontsize=9, zorder=2)
+            else:
+                start = max(clusters)+2 # we will shift also the normal ones ...
+                for i in range(len(X)) :
+                    cluster_id = start + i
+                    plt.scatter(X[i], Y[i],  marker='o', zorder=1)
+                    plt.text(X[i]+epsilon, Y[i]+epsilon, cluster_id, fontsize=9, zorder=2)
+    else:
+        for cl in clusters:
+            # get row indexes for samples with this cluster
+            row_ix = np.where(yhat == cl)
+            X = coordinates[row_ix, 0][0]; Y = coordinates[row_ix, 1][0]
+            Xc = np.average(X); Yc = np.average(Y)
+            plt.scatter(X, Y,  marker='o', zorder=1)
+            if(cl != -1):
+                Xc = np.average(X); Yc = np.average(Y)
+                plt.text(Xc+epsilon, Yc+epsilon, cl, fontsize=9, zorder=2)
+            else:
+                start = max(clusters)+2 # we will shift also the normal ones ...
+                for i in range(len(X)) :
+                    plt.text(X[i]+epsilon, Y[i]+epsilon, cl, fontsize=9, zorder=2)
+
+    plt.show()
+
+
+def plot_cluster(connection, subject_id, img, epsilon, fix=False):
+    '''Perform clustering analysis over source light selection'''
+    cursor = connection.cursor()
+    cursor.execute('''
+        SELECT source_x, source_y 
+        FROM spectra_classification_v 
+        WHERE subject_id = :subject_id
+        ''',
+        {'subject_id': subject_id}
+    )
+    coordinates = cursor.fetchall()
+    N_Classifications = len(coordinates)
+    coordinates = np.array(coordinates)
+    model = cluster.DBSCAN(eps=epsilon, min_samples=2)
+    # Fit the model and predict clusters
+    yhat = model.fit_predict(coordinates)
+    # retrieve unique clusters
+    clusters = np.unique(yhat)
+    log.info(f"Subject {subject_id}: {len(clusters)} clusters from {N_Classifications} classifications, ids: {clusters}")
+    plt.title(f'Subject {subject_id}\nDetected light sources by DBSCAN (\u03B5 = {epsilon} px)')
+    plt.xlabel("X Coordinates")
+    plt.ylabel("Y Coordinates")
+    plt.imshow(img, alpha=0.5, zorder=0)
     for cl in clusters:
         # get row indexes for samples with this cluster
         row_ix = np.where(yhat == cl)
-        plt.scatter(coordinates[row_ix, 0], coordinates[row_ix, 1],  marker='o', zorder=1)
+        X = coordinates[row_ix, 0][0]; Y = coordinates[row_ix, 1][0]
+        
+        if(cl != -1):
+            Xc = np.average(X); Yc = np.average(Y)
+            plt.scatter(X, Y,  marker='o', zorder=1)
+            plt.text(Xc+epsilon, Yc+epsilon, cl+1, fontsize=9, zorder=2)
+        elif fix:
+            start = max(clusters)+2 # we will shift also the normal ones ...
+            for i in range(len(X)) :
+                cluster_id = start + i
+                plt.scatter(X[i], Y[i],  marker='o', zorder=1)
+                plt.text(X[i]+epsilon, Y[i]+epsilon, cluster_id, fontsize=9, zorder=2)
+        else:
+            plt.scatter(X, Y,  marker='o', zorder=1)
+            start = max(clusters)+2 # we will shift also the normal ones ...
+            for i in range(len(X)) :
+                plt.text(X[i]+epsilon, Y[i]+epsilon, cl, fontsize=9, zorder=2)
+
     plt.show()
 
 
@@ -77,12 +154,14 @@ def plot_dbase(connection, subject_id, img):
         {'subject_id': subject_id}
     )
     cluster_ids = cursor.fetchall()
-    plt.title('Light Sources read from the database')
+    plt.title('Subject {subject_id}\nLight Sources from the database')
+    plt.xlabel("X Coordinates")
+    plt.ylabel("Y Coordinates")
     plt.imshow(img, alpha=0.5, zorder=0)
     for (cluster_id,) in cluster_ids:
         cursor2 = connection.cursor()
         cursor2.execute('''
-            SELECT source_x, source_y  
+            SELECT source_x, source_y, epsilon  
             FROM spectra_classification_v 
             WHERE subject_id = :subject_id
             AND cluster_id = :cluster_id
@@ -92,8 +171,11 @@ def plot_dbase(connection, subject_id, img):
         coordinates = cursor2.fetchall()
         N_Classifications = len(coordinates)
         log.info(f"Subject {subject_id}: cluster_id {cluster_id} has {N_Classifications} data points")
-        X, Y = tuple(zip(*coordinates))
+        X, Y, EPS = tuple(zip(*coordinates))
+        Xc = statistics.mean(X); Yc = statistics.mean(Y);
         plt.scatter(X, Y,  marker='o', zorder=1)
+        plt.text(Xc+EPS[0], Yc+EPS[0], cluster_id, fontsize=9, zorder=2)
+        
     plt.show()
 
 # ========
@@ -137,7 +219,7 @@ def plot(connection, options):
         return
     img = plt.imread(filename)
     if options.compute:
-        plot_cluster(connection, subject_id, img, options.distance)
+        plot_cluster(connection, subject_id, img, options.distance, options.fix)
     else:
         plot_dbase(connection, subject_id, img)
 
