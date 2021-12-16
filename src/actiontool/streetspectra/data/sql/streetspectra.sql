@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS spectra_aggregate_t
     source_y            REAL,    -- average light source y coordinate within the image
     spectrum_type       TEXT,    -- spectrum type mode (statistics), One of ('LED', 'MV', 'HPS', 'LPS', 'MH') or NULL
     spectrum_absfreq    INTEGER, -- absolute frequency for the spectrum statistics mode
-    spectrum_dist       TEXT,    -- classification distribution made by the users for a given light source
+    spectrum_distr      TEXT,    -- classification distribution made by the users for a given light source
     cluster_size        INTEGER, -- Number of individual (x,y) points that belongs to the same light source, treated as a cluster 
     epsilon             REAL,    -- DBSCAN's epsilon pàrameter. The maximum distance between two samples for one to be considered as in the neighborhood of the other. 
     rejection_tag       TEXT,    -- When spectrum_type is NULL, shows the reason why
