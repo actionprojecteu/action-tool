@@ -15,6 +15,10 @@ import os.path
 import logging
 import statistics
 
+# ---------------------
+# Third party libraries
+# ---------------------
+
 import numpy as np
 import matplotlib.pyplot as plt
 import sklearn.cluster as cluster
@@ -22,8 +26,6 @@ import sklearn.cluster as cluster
 #--------------
 # local imports
 # -------------
-
-from actiontool import __version__
 
 from streetool.utils import get_image, paging
 
@@ -36,63 +38,6 @@ log = logging.getLogger("streetoool")
 # ----------------
 # Module constants
 # ----------------
-
-def plot_cluster(connection, subject_id, img, epsilon, fix=False):
-    '''Perform clustering analysis over source light selection'''
-    cursor = connection.cursor()
-    cursor.execute('''
-        SELECT source_x, source_y 
-        FROM spectra_classification_v 
-        WHERE subject_id = :subject_id
-        ''',
-        {'subject_id': subject_id}
-    )
-    coordinates = cursor.fetchall()
-    N_Classifications = len(coordinates)
-    coordinates = np.array(coordinates)
-    model = cluster.DBSCAN(eps=epsilon, min_samples=2)
-    # Fit the model and predict clusters
-    yhat = model.fit_predict(coordinates)
-    # retrieve unique clusters
-    clusters = np.unique(yhat)
-    log.info(f"Subject {subject_id}: {len(clusters)} clusters from {N_Classifications} classifications, ids: {clusters}")
-    plt.title(f'Subject {subject_id}\nDetected light sources by DBSCAN (\u03B5 = {epsilon} px)')
-    plt.xlabel("X Coordinates")
-    plt.ylabel("Y Coordinates")
-    plt.imshow(img, alpha=0.5, zorder=0)
-  
-    if fix:
-    # create scatter plot for samples from each cluster
-        for cl in clusters:
-            # get row indexes for samples with this cluster
-            row_ix = np.where(yhat == cl)
-            X = coordinates[row_ix, 0][0]; Y = coordinates[row_ix, 1][0]
-            if(cl != -1):
-                Xc = np.average(X); Yc = np.average(Y)
-                plt.scatter(X, Y,  marker='o', zorder=1)
-                plt.text(Xc+epsilon, Yc+epsilon, cl, fontsize=9, zorder=2)
-            else:
-                start = max(clusters)+2 # we will shift also the normal ones ...
-                for i in range(len(X)) :
-                    cluster_id = start + i
-                    plt.scatter(X[i], Y[i],  marker='o', zorder=1)
-                    plt.text(X[i]+epsilon, Y[i]+epsilon, cluster_id, fontsize=9, zorder=2)
-    else:
-        for cl in clusters:
-            # get row indexes for samples with this cluster
-            row_ix = np.where(yhat == cl)
-            X = coordinates[row_ix, 0][0]; Y = coordinates[row_ix, 1][0]
-            Xc = np.average(X); Yc = np.average(Y)
-            plt.scatter(X, Y,  marker='o', zorder=1)
-            if(cl != -1):
-                Xc = np.average(X); Yc = np.average(Y)
-                plt.text(Xc+epsilon, Yc+epsilon, cl, fontsize=9, zorder=2)
-            else:
-                start = max(clusters)+2 # we will shift also the normal ones ...
-                for i in range(len(X)) :
-                    plt.text(X[i]+epsilon, Y[i]+epsilon, cl, fontsize=9, zorder=2)
-
-    plt.show()
 
 
 def plot_cluster(connection, subject_id, img, epsilon, fix=False):
