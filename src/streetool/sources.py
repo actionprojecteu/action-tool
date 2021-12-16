@@ -154,7 +154,7 @@ def plot_dbase(connection, subject_id, img):
         {'subject_id': subject_id}
     )
     cluster_ids = cursor.fetchall()
-    plt.title('Subject {subject_id}\nLight Sources from the database')
+    plt.title(f'Subject {subject_id}\nLight Sources from the database')
     plt.xlabel("X Coordinates")
     plt.ylabel("Y Coordinates")
     plt.imshow(img, alpha=0.5, zorder=0)
