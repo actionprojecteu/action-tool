@@ -57,19 +57,19 @@ class Cycler:
 
     def reset(self):
         log.info("ENTERING RESET")
-        fig, axe = plt.subplots()
-        self.fig = fig
-        self.axe = axe
+        self.fig, self.axe = plt.subplots()
         # The dimensions are [left, bottom, width, height]
         # All quantities are in fractions of figure width and height.
-        axnext = fig.add_axes([0.90, 0.01, 0.095, 0.050])
+        axnext = self.fig.add_axes([0.90, 0.01, 0.095, 0.050])
         self.bnext = Button(axnext, 'Next')
         self.bnext.on_clicked(self.next)
-        axprev = fig.add_axes([0.79, 0.01, 0.095, 0.050])
+        axprev = self.fig.add_axes([0.79, 0.01, 0.095, 0.050])
         self.bprev = Button(axprev, 'Previous')
         self.bprev.on_clicked(self.prev)
-        axe.set_xlabel("X, pixels")
-        axe.set_ylabel("Y, pixels")
+        self.axe.set_xlabel("X, pixels")
+        self.axe.set_ylabel("Y, pixels")
+        self.axim = None
+        self.sca = list()
         log.info("END RESET")
 
 
@@ -81,14 +81,19 @@ class Cycler:
             raise Exception(f"No image for subject-id {subject_id}")
         img = plt.imread(filename)
         log.info(f"IMG SHAPE {img.shape}")
-        self.axe.imshow(img, alpha=0.5, zorder=0, origin='upper')
+        if self.axim is None:
+            self.axim = self.axe.imshow(img, alpha=0.5, zorder=0, origin='upper')
+        else:
+            self.axim.set_data(img)
         return subject_id
 
 
     def next(self, event):
         log.info("Next clicked")
         self.i = (self.i +1) % self.N
-        #self.reset()
+        for sca in self.sca:
+            sca.remove()
+        self.sca = list()
         if self.compute:
             self.one_compute_step(self.i)
         else:
@@ -100,7 +105,9 @@ class Cycler:
     def prev(self, event):
         log.info("Previous clicked")
         self.i = (self.i -1 + self.N) % self.N
-        #self.reset()
+        for sca in self.sca:
+            sca.remove()
+        self.sca = list()
         if self.compute:
             self.one_compute_step(self.i)
         else:
@@ -137,7 +144,8 @@ class Cycler:
             log.info(f"Subject {subject_id}: cluster_id {cluster_id} has {N_Classifications} data points")
             X, Y, EPS = tuple(zip(*coordinates))
             Xc = statistics.mean(X); Yc = statistics.mean(Y);
-            self.axe.scatter(X, Y,  marker='o', zorder=1)
+            sca = self.axe.scatter(X, Y,  marker='o', zorder=1)
+            self.sca.append(sca)
             self.axe.text(Xc+EPS[0], Yc+EPS[0], cluster_id, fontsize=9, zorder=2)
         
 
@@ -170,16 +178,19 @@ class Cycler:
             X = coordinates[row_ix, 0][0]; Y = coordinates[row_ix, 1][0]
             if(cl != -1):
                 Xc = np.average(X); Yc = np.average(Y)
-                self.axe.scatter(X, Y,  marker='o', zorder=1)
+                sca = self.axe.scatter(X, Y,  marker='o', zorder=1)
+                self.sca.append(sca)
                 self.axe.text(Xc+epsilon, Yc+epsilon, cl+1, fontsize=9, zorder=2)
             elif fix:
                 start = max(clusters)+2 # we will shift also the normal ones ...
                 for i in range(len(X)) :
                     cluster_id = start + i
-                    self.axe.scatter(X[i], Y[i],  marker='o', zorder=1)
+                    sca = self.axe.scatter(X[i], Y[i],  marker='o', zorder=1)
+                    self.sca.append(sca)
                     self.axe.text(X[i]+epsilon, Y[i]+epsilon, cluster_id, fontsize=9, zorder=2)
             else:
-                self.axe.scatter(X, Y,  marker='o', zorder=1)
+                sca = self.axe.scatter(X, Y,  marker='o', zorder=1)
+                self.sca.append(sca)
                 start = max(clusters)+2 # we will shift also the normal ones ...
                 for i in range(len(X)) :
                     self.axe.text(X[i]+epsilon, Y[i]+epsilon, cl, fontsize=9, zorder=2)
