@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS light_sources_t
 (
     classification_id   INTEGER, -- unique Zooinverse classification identifier
     cluster_id          INTEGER, -- light source identifier pointed to by user within the subject. Initially NULL
+    epsilon             REAL,    -- DBSCAN's epsilon pàrameter. The maximum distance between two samples for one to be considered as in the neighborhood of the other. 
     source_x            REAL,    -- light source x coordinate within the image
     source_y            REAL,    -- light source y coordinate within the image
     spectrum_type       TEXT,    -- spectrum type ('HPS','MV','LED','MH')    
@@ -110,6 +111,7 @@ AS SELECT
     s.image_created_at, 
     s.image_spectrum,
     l.cluster_id,
+    l.epsilon,
     l.source_x,
     l.source_y,
     l.spectrum_type,
