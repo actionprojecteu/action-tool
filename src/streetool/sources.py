@@ -46,6 +46,17 @@ class Cycler:
         self.i = 0
         self.N = len(self.subject)
         self.conn = connection
+        self.epsilon = kwargs.get('epsilon',1)
+        self.compute = kwargs.get('compute',False)
+        self.fix     = kwargs.get('fix',False)
+        self.reset()
+        if self.compute:
+            self.one_compute_step(0)
+        else:
+            self.one_database_step(0)
+
+    def reset(self):
+        log.info("ENTERING RESET")
         fig, axe = plt.subplots()
         self.fig = fig
         self.axe = axe
@@ -59,13 +70,7 @@ class Cycler:
         self.bprev.on_clicked(self.prev)
         axe.set_xlabel("X, pixels")
         axe.set_ylabel("Y, pixels")
-        self.epsilon = kwargs.get('epsilon',1)
-        self.compute = kwargs.get('compute',False)
-        self.fix     = kwargs.get('fix',False)
-        if self.compute:
-            self.one_compute_step(0)
-        else:
-            self.one_database_step(0)
+        log.info("END RESET")
 
 
     def load(self, i):
@@ -83,6 +88,7 @@ class Cycler:
     def next(self, event):
         log.info("Next clicked")
         self.i = (self.i +1) % self.N
+        #self.reset()
         if self.compute:
             self.one_compute_step(self.i)
         else:
@@ -94,6 +100,7 @@ class Cycler:
     def prev(self, event):
         log.info("Previous clicked")
         self.i = (self.i -1 + self.N) % self.N
+        #self.reset()
         if self.compute:
             self.one_compute_step(self.i)
         else:
