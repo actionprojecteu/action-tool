@@ -147,8 +147,8 @@ def createParser():
 	subparser = parser_sources.add_subparsers(dest='subcommand')
 
 	soplot = subparser.add_parser('plot', help='Plot light sources with clustering for a given subject')
-	soplot.add_argument('--subject-id',  type=int, required=True, help='Subject id')
-	soplot.add_argument('--distance',    type=float, default=25, help='Cluster max distance between points')
+	soplot.add_argument('--subject-id',  type=int, default=None, help='Subject id')
+	soplot.add_argument('--epsilon',    type=float, default=25, help='Cluster max distance between points')
 	soplot.add_argument('--compute', action='store_true', help='Compute clusteres else read from database')
 	soplot.add_argument('--fix', action='store_true', help='Fix noisy points in its own cluster')
 
