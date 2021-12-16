@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS spectra_aggregate_t
     spectrum_absfreq    INTEGER, -- absolute frequency for the spectrum statistics mode
     spectrum_dist       TEXT,    -- classification distribution made by the users for a given light source
     cluster_size        INTEGER, -- Number of individual (x,y) points that belongs to the same light source, treated as a cluster 
-    eps                 REAL,    -- DBSCAN's eps pàrameter. The maximum distance between two samples for one to be considered as in the neighborhood of the other. 
+    epsilon             REAL,    -- DBSCAN's epsilon pàrameter. The maximum distance between two samples for one to be considered as in the neighborhood of the other. 
     rejection_tag       TEXT,    -- When spectrum_type is NULL, shows the reason why
     -- Metadata coming from the observation platform (i.e Epicollect 5)
     image_id            INTEGER, -- observing platform image Id
