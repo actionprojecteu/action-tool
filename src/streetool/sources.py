@@ -70,6 +70,7 @@ class Cycler:
         self.axe.set_ylabel("Y, pixels")
         self.axim = None
         self.sca = list()
+        self.txt = list()
         log.info("END RESET")
 
 
@@ -88,32 +89,33 @@ class Cycler:
         return subject_id
 
 
-    def next(self, event):
-        log.info("Next clicked")
-        self.i = (self.i +1) % self.N
+    def update(self, i):
+        # remove whats drawn in the scatter plots
         for sca in self.sca:
             sca.remove()
         self.sca = list()
+        for txt in self.txt:
+            txt.remove()
+        self.txt = list()
         if self.compute:
-            self.one_compute_step(self.i)
+            self.one_compute_step(i)
         else:
-            self.one_database_step(self.i)
+            self.one_database_step(i)
         self.fig.canvas.draw_idle()
         self.fig.canvas.flush_events()
+
+
+    def next(self, event):
+        log.info("Next clicked")
+        self.i = (self.i +1) % self.N
+        self.update(self.i)
+        
 
 
     def prev(self, event):
         log.info("Previous clicked")
         self.i = (self.i -1 + self.N) % self.N
-        for sca in self.sca:
-            sca.remove()
-        self.sca = list()
-        if self.compute:
-            self.one_compute_step(self.i)
-        else:
-            self.one_database_step(self.i)
-        self.fig.canvas.draw_idle()
-        self.fig.canvas.flush_events()
+        self.update(self.i)
 
         
     def one_database_step(self, i):
@@ -146,7 +148,8 @@ class Cycler:
             Xc = statistics.mean(X); Yc = statistics.mean(Y);
             sca = self.axe.scatter(X, Y,  marker='o', zorder=1)
             self.sca.append(sca)
-            self.axe.text(Xc+EPS[0], Yc+EPS[0], cluster_id, fontsize=9, zorder=2)
+            txt = self.axe.text(Xc+EPS[0], Yc+EPS[0], cluster_id, fontsize=9, zorder=2)
+            self.txt.append(txt)
         
 
     
@@ -180,20 +183,23 @@ class Cycler:
                 Xc = np.average(X); Yc = np.average(Y)
                 sca = self.axe.scatter(X, Y,  marker='o', zorder=1)
                 self.sca.append(sca)
-                self.axe.text(Xc+epsilon, Yc+epsilon, cl+1, fontsize=9, zorder=2)
+                txt = self.axe.text(Xc+epsilon, Yc+epsilon, cl+1, fontsize=9, zorder=2)
+                self.txt.append(txt)
             elif fix:
                 start = max(clusters)+2 # we will shift also the normal ones ...
                 for i in range(len(X)) :
                     cluster_id = start + i
                     sca = self.axe.scatter(X[i], Y[i],  marker='o', zorder=1)
                     self.sca.append(sca)
-                    self.axe.text(X[i]+epsilon, Y[i]+epsilon, cluster_id, fontsize=9, zorder=2)
+                    txt = self.axe.text(X[i]+epsilon, Y[i]+epsilon, cluster_id, fontsize=9, zorder=2)
+                    self.txt.append(txt)
             else:
                 sca = self.axe.scatter(X, Y,  marker='o', zorder=1)
                 self.sca.append(sca)
                 start = max(clusters)+2 # we will shift also the normal ones ...
                 for i in range(len(X)) :
-                    self.axe.text(X[i]+epsilon, Y[i]+epsilon, cl, fontsize=9, zorder=2)
+                    txt = self.axe.text(X[i]+epsilon, Y[i]+epsilon, cl, fontsize=9, zorder=2)
+                    self.txt.append(txt)
 
 
     
