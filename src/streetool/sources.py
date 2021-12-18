@@ -19,6 +19,7 @@ import statistics
 # Third party libraries
 # ---------------------
 
+import PIL
 import numpy as np
 import matplotlib.pyplot as plt
 import sklearn.cluster as cluster
@@ -56,7 +57,6 @@ class Cycler:
             self.one_database_step(0)
 
     def reset(self):
-        log.info("ENTERING RESET")
         self.fig, self.axe = plt.subplots()
         # The dimensions are [left, bottom, width, height]
         # All quantities are in fractions of figure width and height.
@@ -71,8 +71,8 @@ class Cycler:
         self.axim = None
         self.sca = list()
         self.txt = list()
-        log.info("END RESET")
-
+        self.prev_extent = dict()
+      
 
     def load(self, i):
         subject_id = self.subject[i][0]
@@ -80,12 +80,25 @@ class Cycler:
         filename = get_image(self.conn, subject_id)
         if not filename:
             raise Exception(f"No image for subject-id {subject_id}")
-        img = plt.imread(filename)
-        log.info(f"IMG SHAPE {img.shape}")
+        #img = plt.imread(filename)
+        img = PIL.Image.open(filename)
+        width, height = img.size
         if self.axim is None:
-            self.axim = self.axe.imshow(img, alpha=0.5, zorder=0, origin='upper')
+            self.axim = self.axe.imshow(img, alpha=0.5, zorder=-1, aspect='equal', origin='upper')
+            self.prev_extent[(width,height)] = self.axim.get_extent()
         else:
             self.axim.set_data(img)
+            ext = self.prev_extent.get((width,height), None)
+            # Swap exteent components when current image is rotated respect to the previous
+            if ext is None:
+                ext = list(self.prev_extent[(height,width)])
+                tmp = ext[1]
+                ext[1] = ext[2]
+                ext[2] = tmp
+                self.prev_extent[(width,height)] = tuple(ext)
+            self.axim.set_extent(ext)
+            self.axe.relim()
+            self.axe.autoscale_view()
         return subject_id
 
 
@@ -206,135 +219,6 @@ class Cycler:
 
 
 
-def plot_cluster(connection, subject_id, img, epsilon, fix=False):
-    '''Perform clustering analysis over source light selection'''
-
-    cursor = connection.cursor()
-    cursor.execute('''
-        SELECT source_x, source_y 
-        FROM spectra_classification_v 
-        WHERE subject_id = :subject_id
-        ''',
-        {'subject_id': subject_id}
-    )
-    coordinates = cursor.fetchall()
-    N_Classifications = len(coordinates)
-    coordinates = np.array(coordinates)
-    model = cluster.DBSCAN(eps=epsilon, min_samples=2)
-    # Fit the model and predict clusters
-    yhat = model.fit_predict(coordinates)
-    # retrieve unique clusters
-    clusters = np.unique(yhat)
-    log.info(f"Subject {subject_id}: {len(clusters)} clusters from {N_Classifications} classifications, ids: {clusters}")
-    plt.title(f'Subject {subject_id}\nDetected light sources by DBSCAN (\u03B5 = {epsilon} px)')
-    plt.xlabel("X Coordinates")
-    plt.ylabel("Y Coordinates")
-    plt.imshow(img, alpha=0.5, zorder=0)
-    for cl in clusters:
-        # get row indexes for samples with this cluster
-        row_ix = np.where(yhat == cl)
-        X = coordinates[row_ix, 0][0]; Y = coordinates[row_ix, 1][0]
-        
-        if(cl != -1):
-            Xc = np.average(X); Yc = np.average(Y)
-            plt.scatter(X, Y,  marker='o', zorder=1)
-            plt.text(Xc+epsilon, Yc+epsilon, cl+1, fontsize=9, zorder=2)
-        elif fix:
-            start = max(clusters)+2 # we will shift also the normal ones ...
-            for i in range(len(X)) :
-                cluster_id = start + i
-                plt.scatter(X[i], Y[i],  marker='o', zorder=1)
-                plt.text(X[i]+epsilon, Y[i]+epsilon, cluster_id, fontsize=9, zorder=2)
-        else:
-            plt.scatter(X, Y,  marker='o', zorder=1)
-            start = max(clusters)+2 # we will shift also the normal ones ...
-            for i in range(len(X)) :
-                plt.text(X[i]+epsilon, Y[i]+epsilon, cl, fontsize=9, zorder=2)
-
-
-
-def plot_dbase(connection, subject_id, img):
-    '''Perform clustering analysis over source light selection'''
-    cursor = connection.cursor()
-    cursor.execute('''
-        SELECT DISTINCT cluster_id 
-        FROM spectra_classification_v 
-        WHERE subject_id = :subject_id
-        ORDER BY cluster_id ASC
-        ''',
-        {'subject_id': subject_id}
-    )
-    cluster_ids = cursor.fetchall()
-    plt.title(f'Subject {subject_id}\nLight Sources from the database')
-    plt.xlabel("X Coordinates")
-    plt.ylabel("Y Coordinates")
-    plt.imshow(img, alpha=0.5, zorder=0)
-    for (cluster_id,) in cluster_ids:
-        cursor2 = connection.cursor()
-        cursor2.execute('''
-            SELECT source_x, source_y, epsilon  
-            FROM spectra_classification_v 
-            WHERE subject_id = :subject_id
-            AND cluster_id = :cluster_id
-            ''',
-            {'subject_id': subject_id, 'cluster_id': cluster_id}
-        )        
-        coordinates = cursor2.fetchall()
-        N_Classifications = len(coordinates)
-        log.info(f"Subject {subject_id}: cluster_id {cluster_id} has {N_Classifications} data points")
-        X, Y, EPS = tuple(zip(*coordinates))
-        Xc = statistics.mean(X); Yc = statistics.mean(Y);
-        plt.scatter(X, Y,  marker='o', zorder=1)
-        plt.text(Xc+EPS[0], Yc+EPS[0], cluster_id, fontsize=9, zorder=2)
-        
-
-def plot_dbase(connection, subject_id, img, subject_iterable):
-    '''Perform clustering analysis over source light selection'''
-    cursor = connection.cursor()
-    cursor.execute('''
-        SELECT DISTINCT cluster_id 
-        FROM spectra_classification_v 
-        WHERE subject_id = :subject_id
-        ORDER BY cluster_id ASC
-        ''',
-        {'subject_id': subject_id}
-    )
-    cluster_ids = cursor.fetchall()
-    fig, ax = plt.subplots()
-    # The dimensions are [left, bottom, width, height]
-    # All quantities are in fractions of figure width and height.
-    axprev = fig.add_axes([0.79, 0.01, 0.095, 0.050])
-    axnext = fig.add_axes([0.90, 0.01, 0.095, 0.050])
-    bnext = Button(axnext, 'Next')
-    bnext.on_clicked(lambda x: None)
-    bprev = Button(axprev, 'Previous')
-    bprev.on_clicked(lambda x: None)
-    
-    ax.set_title(f'Subject {subject_id}\nLight Sources from the database')
-    ax.set_xlabel("X Coordinates")
-    ax.set_ylabel("Y Coordinates")
-    ax.imshow(img, alpha=0.5, zorder=0)
-    for (cluster_id,) in cluster_ids:
-        cursor2 = connection.cursor()
-        cursor2.execute('''
-            SELECT source_x, source_y, epsilon  
-            FROM spectra_classification_v 
-            WHERE subject_id = :subject_id
-            AND cluster_id = :cluster_id
-            ''',
-            {'subject_id': subject_id, 'cluster_id': cluster_id}
-        )        
-        coordinates = cursor2.fetchall()
-        N_Classifications = len(coordinates)
-        log.info(f"Subject {subject_id}: cluster_id {cluster_id} has {N_Classifications} data points")
-        X, Y, EPS = tuple(zip(*coordinates))
-        Xc = statistics.mean(X); Yc = statistics.mean(Y);
-        ax.scatter(X, Y,  marker='o', zorder=1)
-        ax.text(Xc+EPS[0], Yc+EPS[0], cluster_id, fontsize=9, zorder=2)
-        
- 
-
-
 # ========
 # COMMANDS
 # ========
@@ -365,18 +249,6 @@ def duplicates(connection, options):
         iterable = cursor,
         headers  = headers,
     )
-
-
-def do_plot(connection, subject_id, options, subject_iterable):
-    filename = get_image(connection, subject_id)
-    if not filename:
-        raise Exception(f"No image for subject-id {subject_id}")
-    img = plt.imread(filename)
-    if options.compute:
-        plot_cluster(connection, subject_id, img, options.distance, options.fix)
-    else:
-        plot_dbase(connection, subject_id, img, subject_iterable)
-    plt.show()
 
 
 def plot(connection, options):

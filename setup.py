@@ -19,6 +19,7 @@ DEPENDENCIES = [
     "matplotlib",
     "scikit-learn",
     'tabulate',
+    'Pillow'
 ]
 
 CLASSIFIERS  = [
