@@ -74,6 +74,9 @@ default_args = {
 # Maps Workflow
 # =============
 
+my_start_date = datetime(year=2022, month=1, day=1)
+my_date_str   = my_start_date.strftime("%Y-%m-%d")
+
 streetspectra_maps_dag = DAG(
     'streetspectra_maps_dag',
     default_args      = default_args,
@@ -87,7 +90,7 @@ streetspectra_maps_dag = DAG(
 jz_export_ec5_observations = EC5ExportEntriesOperator(
     task_id      = "jz_export_ec5_observations",
     conn_id      = "streetspectra-epicollect5",
-    start_date   = datetime(year=2021, month=11, day=10),
+    start_date   = my_start_date,
     #start_date   = "{{prev_ds}}",
     end_date     = "{{ds}}",
     output_path  = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
@@ -106,7 +109,7 @@ jz_email_json = EmailOperator(
     task_id      = "jz_email_json",
     to           = ("astrorafael@gmail.com","rafael08@ucm.es", "jzamorano@fis.ucm.es", "jzamoran@ucm.es"),
     subject      = "[StreetSpectra] Epicollect V JSON file",
-    html_content = "Hola Jaime: \n Aquí te envío el JSON desde 2021-11-10 hasta {{ds}} incluidos.",
+    html_content = "Hola Jaime: \n Aquí te envío el JSON desde {{my_date_str}} hasta {{ds}} incluidos.",
     #html_content = "Hola Jaime: \n Aquí te envío el JSON desde {{prev_ds}} hasta {{ds}} incluidos.",
     files        = ['/tmp/ec5/street-spectra/jz-{{ds}}.json'],
     dag          = streetspectra_maps_dag,
