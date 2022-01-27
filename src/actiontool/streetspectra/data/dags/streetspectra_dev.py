@@ -107,9 +107,9 @@ jz_transform_ec5_observations = EC5TransformOperator(
 
 jz_email_json = EmailOperator(
     task_id      = "jz_email_json",
-    to           = ("astrorafael@gmail.com","rafael08@ucm.es", "jzamorano@fis.ucm.es", "jzamoran@ucm.es"),
+    to           = ("rafael08@ucm.es", "jzamorano@fis.ucm.es"),
     subject      = "[StreetSpectra] Epicollect V JSON file",
-    html_content = "Hola Jaime: \n Aquí te envío el JSON desde {{my_date_str}} hasta {{ds}} incluidos.",
+    html_content = "Hola Jaime: \n Aquí te envío el JSON desde {0} ".format(my_date_str) + "hasta {{ds}} incluidos.",
     #html_content = "Hola Jaime: \n Aquí te envío el JSON desde {{prev_ds}} hasta {{ds}} incluidos.",
     files        = ['/tmp/ec5/street-spectra/jz-{{ds}}.json'],
     dag          = streetspectra_maps_dag,
