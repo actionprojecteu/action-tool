@@ -140,6 +140,7 @@ In addition to the items mentioned in the [Zooniverse feeding workflow](#zoonive
 
 1.  SQLite classification database creation
 
+***Note***: *This needs SQLite version >= 3.32*
 
 Using the `actiontool` command installed as par of the `streetspectra-tool` Python package.
 
