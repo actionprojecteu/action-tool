@@ -36,7 +36,7 @@ from airflow_actionproject.operators.epicollect5   import EC5ExportEntriesOperat
 from airflow_actionproject.operators.zooniverse    import ZooniverseExportOperator, ZooniverseDeltaOperator, ZooniverseTransformOperator
 from airflow_actionproject.operators.zenodo        import ZenodoPublishDatasetOperator
 from airflow_actionproject.operators.action        import ActionDownloadFromVariableDateOperator, ActionUploadOperator
-from airflow_actionproject.operators.streetspectra import EC5TransformOperator, ZooImportOperator
+from airflow_actionproject.operators.streetspectra import EC5TransformOperator,  SQLInsertObservationsOperator, ZooImportOperator
 from airflow_actionproject.operators.streetspectra import PreprocessClassifOperator, AggregateOperator, AggregateCSVExportOperator, IndividualCSVExportOperator
 from airflow_actionproject.callables.zooniverse    import zooniverse_manage_subject_sets
 from airflow_actionproject.callables.action        import check_number_of_entries
@@ -69,6 +69,52 @@ default_args = {
     # 'sla_miss_callback': yet_another_function,
     # 'trigger_rule': 'all_success'
 }
+
+
+# ==================================
+# Export from the beginning workflow
+# ==================================
+
+xxx_start_date = datetime(year=2018, month=1, day=1)
+xxx_date_str   = xxx_start_date.strftime("%Y-%m-%d")
+
+streetspectra_xxx_dag = DAG(
+    'streetspectra_xxx_dag',
+    default_args      = default_args,
+    description       = 'StreetSpectra: Export all images',
+    #schedule_interval = '@monthly',
+    start_date        = days_ago(1),
+    tags              = ['StreetSpectra', 'ACTION PROJECT'],
+)
+
+# This is a cummulative downloading from the beginning
+xxx_export_ec5_observations = EC5ExportEntriesOperator(
+    task_id      = "xxx_export_ec5_observations",
+    conn_id      = "streetspectra-epicollect5",
+    start_date   = xxx_start_date,
+    #start_date   = "{{prev_ds}}",
+    end_date     = "{{ds}}",
+    output_path  = "/tmp/ec5/street-spectra/xxx-raw-{{ds}}.json",
+    dag          = streetspectra_xxx_dag,
+)
+
+xxx_transform_ec5_observations = EC5TransformOperator(
+    task_id      = "xxx_transform_ec5_observations",
+    input_path   = "/tmp/ec5/street-spectra/xxx-raw-{{ds}}.json",
+    output_path  = "/tmp/ec5/street-spectra/xxx-{{ds}}.json",
+    dag          = streetspectra_xxx_dag,
+)
+
+xxx_load_sql_ec5_observations = SQLInsertObservationsOperator(
+    task_id    = "xxx_load_sql_ec5_observations",
+    conn_id    = "streetspectra-db",
+    input_path = "/tmp/ec5/street-spectra/xxx-{{ds}}.json",
+    dag        = streetspectra_xxx_dag,
+)
+
+
+xxx_export_ec5_observations >> xxx_transform_ec5_observations >> xxx_load_sql_ec5_observations
+
 
 # =============
 # Maps Workflow
@@ -331,8 +377,8 @@ export_classifications = ZooniverseExportOperator(
     task_id     = "export_classifications",
     conn_id     = "streetspectra-zooniverse-test",      # CAMBIAR AL conn_id DE PRODUCCION
     output_path = "/tmp/zooniverse/complete-{{ds}}.json",
-    generate    = True, 
-    wait        = True, 
+    generate    = False, 
+    wait        = False, 
     timeout     = 600,
     dag         = streetspectra_aggregate_dag,
 )

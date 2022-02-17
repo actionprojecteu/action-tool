@@ -105,8 +105,9 @@ def createParser():
 
 	subparser = parser.add_subparsers(dest='command')
 	parser_sources = subparser.add_parser('sources', help='sources commands')
-	parser_users = subparser.add_parser('users', help='users commands')
+	parser_users   = subparser.add_parser('users', help='users commands')
 	parser_classif = subparser.add_parser('classifications', help='classifications commands')
+	parser_dbase   = subparser.add_parser('database', help='database commands')
 
 	# ------------------------------------------------
 	# Create second level parser for 'classifications'
@@ -138,8 +139,17 @@ def createParser():
 	group2.add_argument('--summary', action='store_true', help='How many users have participated.')
 	group2.add_argument('--classif', action='store_true', help='Show classifications per user.')
 	
-	
+	# ----------------------------------------
+	# Create second level parser for 'database'
+	# ----------------------------------------
 
+	subparser = parser_dbase.add_subparsers(dest='subcommand')
+	dbpur = subparser.add_parser('purge', help="Purge varios tables's content")
+	group1 = dbpur.add_mutually_exclusive_group(required=True)
+	group1.add_argument('--all', action='store_true', help='Purge all tables')
+	group1.add_argument('--classif', action='store_true', help='Purge classification & aggregation tables')
+	group1.add_argument('--collect', action='store_true', help='Purge image collection tables')
+	
 	# ----------------------------------------
 	# Create second level parser for 'sources'
 	# ----------------------------------------

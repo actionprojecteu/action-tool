@@ -1,6 +1,10 @@
------------------------------------------------------------------------------
+-- ###########################################################################
 -- Auxiliar database to avoid duplicate observations into the ACTION Database
------------------------------------------------------------------------------
+-- ###########################################################################
+
+-- ===================================================================
+--            ZOONIVERSE CLASSIFICATIONS MANAGMENT TABLES
+-- ===================================================================
 
 ------------------------------------------------------------------------
 -- This is the current Zooniverse export data format
@@ -169,3 +173,28 @@ CREATE TABLE IF NOT EXISTS zenodo_csv_t
     PRIMARY KEY(hash)
 );
 
+
+-- ===================================================================
+--               IMAGE COLLECTION MANAGMENT TABLES
+-- ===================================================================
+
+CREATE TABLE IF NOT EXISTS epicollect5_t
+(
+    image_id            TEXT,    -- Image GUID
+    created_at          TEXT,    -- Original entry creation timestamp
+    uploaded_at         TEXT,    -- Image upload into database timestamp
+    written_at          TEXT,    -- Database insertion timestamp
+    title               TEXT,    -- Image title, usually the GUID
+    observer            TEXT,    -- observer's nickname
+    latitude            REAL,    -- image latitude in degrees
+    longitude           REAL,    -- image longitude in degrees
+    accuracy            INTEGER, -- coordinates accuracy
+    url                 TEXT,    -- image URL
+    spectrum_type       TEXT,    -- optional spectrum type set by observer
+    comment             TEXT,    -- optional observer comment
+    project             TEXT,    -- source project identifier ('street-spectra')
+    source              TEXT,    -- Observing platform ('Epicollect5')
+    obs_type            TEXT,    -- Entry type ('observation')
+
+    PRIMARY KEY(image_id)
+);
