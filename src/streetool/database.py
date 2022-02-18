@@ -64,7 +64,7 @@ def purge_classifications(connection):
     purge_zoo_export_t(connection)
 
 def purge_collection(connection):
-    purge_epicollect5_t(connection):
+    purge_epicollect5_t(connection)
 
 
 

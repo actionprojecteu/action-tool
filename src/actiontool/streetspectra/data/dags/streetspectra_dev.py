@@ -35,7 +35,7 @@ from airflow.providers.sqlite.operators.sqlite import SqliteOperator
 from airflow_actionproject.operators.epicollect5   import EC5ExportEntriesOperator
 from airflow_actionproject.operators.zooniverse    import ZooniverseExportOperator, ZooniverseDeltaOperator, ZooniverseTransformOperator
 from airflow_actionproject.operators.zenodo        import ZenodoPublishDatasetOperator
-from airflow_actionproject.operators.action        import ActionDownloadFromVariableDateOperator, ActionUploadOperator
+from airflow_actionproject.operators.action        import ActionDownloadFromVariableDateOperator, ActionUploadOperator, ActionDownloadFromStartDateOperator
 from airflow_actionproject.operators.streetspectra import EC5TransformOperator,  SQLInsertObservationsOperator, ZooImportOperator
 from airflow_actionproject.operators.streetspectra import PreprocessClassifOperator, AggregateOperator, AggregateCSVExportOperator, IndividualCSVExportOperator
 from airflow_actionproject.callables.zooniverse    import zooniverse_manage_subject_sets
@@ -112,6 +112,23 @@ xxx_load_sql_ec5_observations = SQLInsertObservationsOperator(
     dag        = streetspectra_xxx_dag,
 )
 
+xxx_download_from_action = ActionDownloadFromStartDateOperator(
+    task_id        = "xxx_download_from_action",
+    conn_id        = "streetspectra-action-database",
+    start_date     = "2018-01-01T00:00:00.00000Z",
+    output_path    = "/tmp/zooniverse/streetspectra/xxx-action-{{ds}}.json",
+    n_entries      = 10000,                                  
+    project        = "street-spectra", 
+    obs_type       = "observation",
+    dag            = streetspectra_xxx_dag,
+)
+
+xxx_load2_sql_ec5_observations = SQLInsertObservationsOperator(
+    task_id    = "xxx_load2_sql_ec5_observations",
+    conn_id    = "streetspectra-db",
+    input_path = "/tmp/ec5/street-spectra/xxx-action-{{ds}}.json",
+    dag        = streetspectra_xxx_dag,
+)
 
 xxx_export_ec5_observations >> xxx_transform_ec5_observations >> xxx_load_sql_ec5_observations
 

@@ -19,3 +19,20 @@ ls = SSHOperator(
  # Sacar los JSON que pide Jaime con
 
  	(venv_airflow)  (main) ~/repos/action-tool$ airflow dags test streetspectra_maps_dag YYYY-MM-DD
+
+BUGS
+====
+En la ACTION Database hay 2448 entradas
+```bash
+[2022-02-17 14:53:06,949] {action.py:54} INFO - getting connection information from streetspectra-action-database
+[2022-02-17 14:53:06,951] {base.py:65} INFO - Using connection to: id: streetspectra-action-database. Host: api.actionproject.eu, Port: 443, Schema: observations, Login: None, Password: XXXXXXXX, extra: XXXXXXXX
+[2022-02-17 14:53:06,951] {action.py:166} INFO - Fetching 10000 entries from date 2018-01-01T00:00:00.00000Z
+[2022-02-17 14:53:06,951] {action.py:165} INFO - Getting from ACTION Database 10000 observation(s) for street-spectra from 2018-01-01T00:00:00.00000Z to 2999-12-31T23:59:59.99999Z
+[2022-02-17 14:53:22,778] {action.py:181} INFO - Fetched 2448 entries
+[2022-02-17 14:53:22,778] {action.py:175} INFO - Closing ACTION database hook
+[2022-02-17 14:53:22,817] {action.py:187} INFO - Written entries to /tmp/zooniverse/streetspectra/xxx-action-2022-02-17.json
+[2022-02-17 14:53:22,819] {taskinstance.py:1159} INFO - Marking task as SUCCESS. dag_id=streetspectra_xxx_dag, task_id=xxx_download_from_action, execution_date=20220217T000000, start_date=20220217T135306, end_date=20220217T135322
+```
+
+Mientras que en Epicollect5 hay 3700
+
