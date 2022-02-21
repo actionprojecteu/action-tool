@@ -28,10 +28,13 @@ from airflow.operators.email  import EmailOperator
 # custom Airflow imports
 # ----------------------
 
-from airflow_actionproject.operators.action        import ActionDownloadFromVariableDateOperator
+#from airflow_actionproject.operators.action        import ActionDownloadFromVariableDateOperator
+from airflow_actionproject.operators.streetspectra import ActionDownloadFromVariableDateOperator
+
 from airflow_actionproject.operators.streetspectra import ZooImportOperator
 from airflow_actionproject.callables.zooniverse    import zooniverse_manage_subject_sets
-from airflow_actionproject.callables.action        import check_number_of_entries
+#from airflow_actionproject.callables.action        import check_number_of_entries
+from airflow_actionproject.callables.streetspectra import check_number_of_entries
 
 # ---------------------
 # Default DAG arguments
@@ -93,11 +96,26 @@ manage_subject_sets = ShortCircuitOperator(
     dag           = streetspectra_feed_dag
 )
 
+# check_enough_observations = BranchPythonOperator(
+#     task_id         = "check_enough_observations",
+#     python_callable = check_number_of_entries,
+#     op_kwargs = {
+#         "conn_id"       : "streetspectra-action-database",
+#         "start_date"    : Variable.get("streetspectra_read_tstamp"),  
+#         "n_entries"     : N_ENTRIES,                              
+#         "project"       : "street-spectra",
+#         "true_task_id"  : "download_from_action",
+#         "false_task_id" : "email_no_images",
+#         "obs_type"      : 'observation',
+#     },
+#     dag           = streetspectra_feed_dag
+# )
+
 check_enough_observations = BranchPythonOperator(
     task_id         = "check_enough_observations",
     python_callable = check_number_of_entries,
     op_kwargs = {
-        "conn_id"       : "streetspectra-action-database",
+        "conn_id"       : "streetspectra-db",
         "start_date"    : Variable.get("streetspectra_read_tstamp"),  
         "n_entries"     : N_ENTRIES,                              
         "project"       : "street-spectra",
@@ -116,9 +134,20 @@ email_no_images = EmailOperator(
     dag          = streetspectra_feed_dag,
 )
 
+# download_from_action = ActionDownloadFromVariableDateOperator(
+#     task_id        = "download_from_action",
+#     conn_id        = "streetspectra-action-database",
+#     output_path    = "/tmp/zooniverse/streetspectra/action-{{ds}}.json",
+#     variable_name  = "streetspectra_read_tstamp",
+#     n_entries      = N_ENTRIES,                                    
+#     project        = "street-spectra", 
+#     obs_type       = "observation",
+#     dag            = streetspectra_feed_dag,
+# )
+
 download_from_action = ActionDownloadFromVariableDateOperator(
     task_id        = "download_from_action",
-    conn_id        = "streetspectra-action-database",
+    conn_id        = "streetspectra-db",
     output_path    = "/tmp/zooniverse/streetspectra/action-{{ds}}.json",
     variable_name  = "streetspectra_read_tstamp",
     n_entries      = N_ENTRIES,                                    
@@ -150,7 +179,7 @@ email_new_subject_set = EmailOperator(
 cleanup_action_obs_file = BashOperator(
     task_id      = "cleanup_action_obs_file",
     trigger_rule = "none_failed",    # For execution of just one preceeding branch only
-    bash_command = "rm /tmp/zooniverse/streetspectra/*{{ds}}.json",
+    bash_command = "rm -f /tmp/zooniverse/streetspectra/*{{ds}}.json",
     dag          = streetspectra_feed_dag,
 )
 
