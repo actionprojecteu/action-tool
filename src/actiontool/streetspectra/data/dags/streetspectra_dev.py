@@ -38,8 +38,11 @@ from airflow_actionproject.operators.zenodo        import ZenodoPublishDatasetOp
 from airflow_actionproject.operators.action        import ActionDownloadFromVariableDateOperator, ActionUploadOperator, ActionDownloadFromStartDateOperator
 from airflow_actionproject.operators.streetspectra import EC5TransformOperator,  SQLInsertObservationsOperator, ZooImportOperator
 from airflow_actionproject.operators.streetspectra import PreprocessClassifOperator, AggregateOperator, AggregateCSVExportOperator, IndividualCSVExportOperator
+from airflow_actionproject.operators.streetspectra import ActionDownloadFromVariableDateOperator
+
 from airflow_actionproject.callables.zooniverse    import zooniverse_manage_subject_sets
-from airflow_actionproject.callables.action        import check_number_of_entries
+#from airflow_actionproject.callables.action        import check_number_of_entries
+from airflow_actionproject.callables.streetspectra import check_number_of_entries
 from airflow_actionproject.callables.streetspectra import check_new_subjects, check_new_csv_version
 
 # ---------------------
@@ -320,9 +323,20 @@ email_no_images = EmailOperator(
     dag          = streetspectra_feed_dag,
 )
 
+# download_from_action = ActionDownloadFromVariableDateOperator(
+#     task_id        = "download_from_action",
+#     conn_id        = "streetspectra-action-database",
+#     output_path    = "/tmp/zooniverse/streetspectra/action-{{ds}}.json",
+#     variable_name  = "streetspectra_read_tstamp",
+#     n_entries      = N_ENTRIES,                                    
+#     project        = "street-spectra", 
+#     obs_type       = "observation",
+#     dag            = streetspectra_feed_dag,
+# )
+
 download_from_action = ActionDownloadFromVariableDateOperator(
     task_id        = "download_from_action",
-    conn_id        = "streetspectra-action-database",
+    conn_id        = "streetspectra-db",
     output_path    = "/tmp/zooniverse/streetspectra/action-{{ds}}.json",
     variable_name  = "streetspectra_read_tstamp",
     n_entries      = N_ENTRIES,                                    

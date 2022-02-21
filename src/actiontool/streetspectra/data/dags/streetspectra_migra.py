@@ -19,28 +19,17 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.utils.dates import days_ago
 
-from airflow.models import Variable
-
 from airflow.operators.bash import BashOperator
 from airflow.operators.dummy import DummyOperator
-from airflow.operators.python import PythonOperator, ShortCircuitOperator, BranchPythonOperator
-from airflow.operators.email  import EmailOperator
-from airflow.providers.sqlite.operators.sqlite import SqliteOperator
-
+from airflow.operators.python import PythonOperator
 
 #-----------------------
 # custom Airflow imports
 # ----------------------
 
 from airflow_actionproject.operators.epicollect5   import EC5ExportEntriesOperator
-from airflow_actionproject.operators.zooniverse    import ZooniverseExportOperator, ZooniverseDeltaOperator, ZooniverseTransformOperator
-from airflow_actionproject.operators.zenodo        import ZenodoPublishDatasetOperator
-from airflow_actionproject.operators.action        import ActionDownloadFromVariableDateOperator, ActionUploadOperator, ActionDownloadFromStartDateOperator
-from airflow_actionproject.operators.streetspectra import EC5TransformOperator,  SQLInsertObservationsOperator, ZooImportOperator
-from airflow_actionproject.operators.streetspectra import PreprocessClassifOperator, AggregateOperator, AggregateCSVExportOperator, IndividualCSVExportOperator
-from airflow_actionproject.callables.zooniverse    import zooniverse_manage_subject_sets
-from airflow_actionproject.callables.action        import check_number_of_entries
-from airflow_actionproject.callables.streetspectra import check_new_subjects, check_new_csv_version
+from airflow_actionproject.operators.action        import ActionDownloadFromStartDateOperator
+from airflow_actionproject.operators.streetspectra import EC5TransformOperator,  SQLInsertObservationsOperator
 
 # ---------------------
 # Default DAG arguments
@@ -103,15 +92,15 @@ migra1_transform_ec5_observations = EC5TransformOperator(
     dag          = migra1_streetspectra_dag,
 )
 
-migra1_load_sql_ec5_observations = SQLInsertObservationsOperator(
-    task_id    = "migra1_load_sql_ec5_observations",
+migra1_upload_ec5_observations = SQLInsertObservationsOperator(
+    task_id    = "migra1_upload_ec5_observations",
     conn_id    = "streetspectra-db",
     input_path = "/tmp/ec5/street-spectra/migra1-{{ds}}.json",
     dag        = migra1_streetspectra_dag,
 )
 
-migra1_download_from_action = ActionDownloadFromStartDateOperator(
-    task_id        = "migra1_download_from_action",
+migra1_download_from_mongo = ActionDownloadFromStartDateOperator(
+    task_id        = "migra1_download_from_mongo",
     conn_id        = "streetspectra-action-database",
     start_date     = "2018-01-01",
     output_path    = "/tmp/ec5/street-spectra/migra1-action-{{ds}}.json",
@@ -121,12 +110,12 @@ migra1_download_from_action = ActionDownloadFromStartDateOperator(
     dag            = migra1_streetspectra_dag,
 )
 
-migra1_load2_sql_ec5_observations = SQLInsertObservationsOperator(
-    task_id    = "migra1_load2_sql_ec5_observations",
+migra1_upload_mongo_observations = SQLInsertObservationsOperator(
+    task_id    = "migra1_upload_mongo_observations",
     conn_id    = "streetspectra-db",
     input_path = "/tmp/ec5/street-spectra/migra1-action-{{ds}}.json",
     dag        = migra1_streetspectra_dag,
 )
 
-migra1_export_ec5_observations   >> migra1_transform_ec5_observations >> migra1_load_sql_ec5_observations
-migra1_load_sql_ec5_observations >> migra1_download_from_action       >> migra1_load2_sql_ec5_observations
+migra1_export_ec5_observations >> migra1_transform_ec5_observations >> migra1_upload_ec5_observations
+migra1_upload_ec5_observations >> migra1_download_from_mongo        >> migra1_upload_mongo_observations
