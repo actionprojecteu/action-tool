@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS spectra_classification_t
     width               INTEGER, -- image width
     height              INTEGER, -- image height
     -- Metadata coming from the observation platform (i.e Epicollect 5)
-    image_id            INTEGER, -- observing platform image Id
+    image_id            TEXT,    -- observing platform image Id (i.e. Epicollect5 GUID)
     image_url           TEXT,    -- observing platform image URL
     image_long          REAL,    -- image aprox. longitude
     image_lat           REAL,    -- image aprox. latitude

@@ -115,8 +115,8 @@ xxx_load_sql_ec5_observations = SQLInsertObservationsOperator(
 xxx_download_from_action = ActionDownloadFromStartDateOperator(
     task_id        = "xxx_download_from_action",
     conn_id        = "streetspectra-action-database",
-    start_date     = "2018-01-01T00:00:00.00000Z",
-    output_path    = "/tmp/zooniverse/streetspectra/xxx-action-{{ds}}.json",
+    start_date     = "2018-01-01",
+    output_path    = "/tmp/ec5/street-spectra/xxx-action-{{ds}}.json",
     n_entries      = 10000,                                  
     project        = "street-spectra", 
     obs_type       = "observation",
@@ -269,6 +269,10 @@ export_ec5_old          >> transform_ec5_old          >> load_ec5_old          >
 # Zooniverse Feeding Workflow
 # ===========================
 
+# Zooniverse Dataset size
+# Recommended between 100 and 500 for production environments
+N_ENTRIES = 10 # ESTO TIENE QUE CAMBIARSE A 500 PARA PRODUCCION
+
 streetspectra_feed_dag = DAG(
     'streetspectra_feed_dag',
     default_args      = default_args,
@@ -299,7 +303,7 @@ check_enough_observations = BranchPythonOperator(
     op_kwargs = {
         "conn_id"       : "streetspectra-action-database",
         "start_date"    : Variable.get("streetspectra_read_tstamp"),    
-        "n_entries"     : 10,                               # ESTO TIENE QUE CAMBIARSE A 500 PARA PRODUCCION
+        "n_entries"     : N_ENTRIES,                               
         "project"       : "street-spectra",
         "true_task_id"  : "download_from_action",
         "false_task_id" : "email_no_images",
@@ -321,7 +325,7 @@ download_from_action = ActionDownloadFromVariableDateOperator(
     conn_id        = "streetspectra-action-database",
     output_path    = "/tmp/zooniverse/streetspectra/action-{{ds}}.json",
     variable_name  = "streetspectra_read_tstamp",
-    n_entries      = 10,                                    # ESTO TIENE QUE CAMBIARSE A 500 PARA PRODUCCION
+    n_entries      = N_ENTRIES,                                    
     project        = "street-spectra", 
     obs_type       = "observation",
     dag            = streetspectra_feed_dag,
