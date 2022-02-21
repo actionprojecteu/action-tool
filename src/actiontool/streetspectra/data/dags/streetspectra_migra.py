@@ -75,7 +75,7 @@ default_args = {
 # Export from the beginning workflow
 # ==================================
 
-migra_start_date = datetime(year=2018, month=1, day=1).strftime("%Y-%m-%d")
+migra1_start_date = datetime(year=2018, month=1, day=1).strftime("%Y-%m-%d")
 
 migra1_streetspectra_dag = DAG(
     'migra1_streetspectra_dag',
