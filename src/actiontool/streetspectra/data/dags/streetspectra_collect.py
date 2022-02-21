@@ -27,7 +27,7 @@ from airflow.operators.bash import BashOperator
 
 from airflow_actionproject.operators.epicollect5   import EC5ExportEntriesOperator
 from airflow_actionproject.operators.action        import ActionUploadOperator
-from airflow_actionproject.operators.streetspectra import EC5TransformOperator
+from airflow_actionproject.operators.streetspectra import EC5TransformOperator, SQLInsertObservationsOperator
 
 # ---------------------
 # Default DAG arguments
@@ -70,7 +70,7 @@ streetspectra_collect_dag = DAG(
     default_args      = default_args,
     description       = 'StreetSpectra: collect observations',
     #schedule_interval = '@monthly',
-    schedule_interval = '0 12 1 * *', # Execute monthly at midday (12:00)
+    schedule_interval = '0 12 * * *', # Execute daily at midday (12:00)
     start_date        = days_ago(1),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
 )
@@ -102,14 +102,27 @@ load_ec5_observations = ActionUploadOperator(
     dag        = streetspectra_collect_dag,
 )
 
-clean_up_ec5_files = BashOperator(
-    task_id      = "clean_up_ec5_files",
-    bash_command = "rm /tmp/ec5/street-spectra/*{{ds}}.json",
+# New task to feed SQLite database with Epicollect5 observations
+# in pararllel to feeded MongoDB
+load2_ec5_observations = SQLInsertObservationsOperator(
+    task_id    = "load2_ec5_observations",
+    conn_id    = "streetspectra-db",
+    input_path = "/tmp/ec5/street-spectra/transformed-{{ds}}.json",
     dag        = streetspectra_collect_dag,
 )
 
+
+clean_up_ec5_files = BashOperator(
+    task_id      = "clean_up_ec5_files",
+    bash_command = "rm -f /tmp/ec5/street-spectra/*{{ds}}.json",
+    dag        = streetspectra_collect_dag,
+)
+
+# ---------------------------------------
 # Old StreetSpectra Epicollect V project
 # included for compatibilty only
+# ---------------------------------------
+
 export_ec5_old = EC5ExportEntriesOperator(
     task_id      = "export_ec5_old",
     conn_id      = "oldspectra-epicollect5",
@@ -133,9 +146,19 @@ load_ec5_old = ActionUploadOperator(
     dag        = streetspectra_collect_dag,
 )
 
+# New task to feed SQLite database with Epicollect5 observations
+# in pararllel to feeded MongoDB
+load2_ec5_old = SQLInsertObservationsOperator(
+    task_id    = "load2_ec5_old",
+    conn_id    = "streetspectra-db",
+    input_path = "/tmp/ec5/street-spectra/old-transformed-{{ds}}.json",
+    dag        = streetspectra_collect_dag,
+)
+
+
 # -----------------
 # Task dependencies
 # -----------------
 
-export_ec5_observations >> transform_ec5_observations >> load_ec5_observations >> clean_up_ec5_files
-export_ec5_old          >> transform_ec5_old          >> load_ec5_old          >> clean_up_ec5_files
+export_ec5_observations >> transform_ec5_observations >> [load_ec5_observations, load2_ec5_observations] >> clean_up_ec5_files
+export_ec5_old          >> transform_ec5_old          >> [load_ec5_old, load2_ec5_old]                   >> clean_up_ec5_files
