@@ -69,7 +69,7 @@ migra1_start_date = datetime(year=2018, month=1, day=1).strftime("%Y-%m-%d")
 migra1_streetspectra_dag = DAG(
     'migra1_streetspectra_dag',
     default_args      = default_args,
-    description       = 'StreetSpectra: Export all images',
+    description       = 'StreetSpectra: Migrate all images to StteetSpectra SQLite',
     #schedule_interval = '@monthly',
     start_date        = days_ago(1),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],

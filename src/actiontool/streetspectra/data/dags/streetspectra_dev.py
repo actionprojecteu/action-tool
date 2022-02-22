@@ -35,8 +35,10 @@ from airflow.providers.sqlite.operators.sqlite import SqliteOperator
 from airflow_actionproject.operators.epicollect5   import EC5ExportEntriesOperator
 from airflow_actionproject.operators.zooniverse    import ZooniverseExportOperator, ZooniverseDeltaOperator, ZooniverseTransformOperator
 from airflow_actionproject.operators.zenodo        import ZenodoPublishDatasetOperator
-from airflow_actionproject.operators.action        import ActionDownloadFromVariableDateOperator, ActionUploadOperator, ActionDownloadFromStartDateOperator
-from airflow_actionproject.operators.streetspectra import EC5TransformOperator,  SQLInsertObservationsOperator, ZooImportOperator
+from airflow_actionproject.operators.action        import ActionUploadOperator, ActionDownloadFromStartDateOperator
+#from airflow_actionproject.operators.action        import ActionDownloadFromVariableDateOperator
+
+from airflow_actionproject.operators.streetspectra import EC5TransformOperator, SQLInsertObservationsOperator, ZooImportOperator 
 from airflow_actionproject.operators.streetspectra import PreprocessClassifOperator, AggregateOperator, AggregateCSVExportOperator, IndividualCSVExportOperator
 from airflow_actionproject.operators.streetspectra import ActionDownloadFromVariableDateOperator
 
@@ -44,6 +46,8 @@ from airflow_actionproject.callables.zooniverse    import zooniverse_manage_subj
 #from airflow_actionproject.callables.action        import check_number_of_entries
 from airflow_actionproject.callables.streetspectra import check_number_of_entries
 from airflow_actionproject.callables.streetspectra import check_new_subjects, check_new_csv_version
+
+
 
 # ---------------------
 # Default DAG arguments
@@ -78,63 +82,61 @@ default_args = {
 # Export from the beginning workflow
 # ==================================
 
-xxx_start_date = datetime(year=2018, month=1, day=1)
-xxx_date_str   = xxx_start_date.strftime("%Y-%m-%d")
+migra1_start_date = datetime(year=2018, month=1, day=1).strftime("%Y-%m-%d")
 
-streetspectra_xxx_dag = DAG(
-    'streetspectra_xxx_dag',
+migra1_streetspectra_dag = DAG(
+    'migra1_streetspectra_dag',
     default_args      = default_args,
-    description       = 'StreetSpectra: Export all images',
+    description       = 'StreetSpectra: Migrate all images to StteetSpectra SQLite',
     #schedule_interval = '@monthly',
     start_date        = days_ago(1),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
 )
 
 # This is a cummulative downloading from the beginning
-xxx_export_ec5_observations = EC5ExportEntriesOperator(
-    task_id      = "xxx_export_ec5_observations",
+migra1_export_ec5_observations = EC5ExportEntriesOperator(
+    task_id      = "migra1_export_ec5_observations",
     conn_id      = "streetspectra-epicollect5",
-    start_date   = xxx_start_date,
-    #start_date   = "{{prev_ds}}",
+    start_date   = migra1_start_date,
     end_date     = "{{ds}}",
-    output_path  = "/tmp/ec5/street-spectra/xxx-raw-{{ds}}.json",
-    dag          = streetspectra_xxx_dag,
+    output_path  = "/tmp/ec5/street-spectra/migra1-raw-{{ds}}.json",
+    dag          = migra1_streetspectra_dag,
 )
 
-xxx_transform_ec5_observations = EC5TransformOperator(
-    task_id      = "xxx_transform_ec5_observations",
-    input_path   = "/tmp/ec5/street-spectra/xxx-raw-{{ds}}.json",
-    output_path  = "/tmp/ec5/street-spectra/xxx-{{ds}}.json",
-    dag          = streetspectra_xxx_dag,
+migra1_transform_ec5_observations = EC5TransformOperator(
+    task_id      = "migra1_transform_ec5_observations",
+    input_path   = "/tmp/ec5/street-spectra/migra1-raw-{{ds}}.json",
+    output_path  = "/tmp/ec5/street-spectra/migra1-{{ds}}.json",
+    dag          = migra1_streetspectra_dag,
 )
 
-xxx_load_sql_ec5_observations = SQLInsertObservationsOperator(
-    task_id    = "xxx_load_sql_ec5_observations",
+migra1_upload_ec5_observations = SQLInsertObservationsOperator(
+    task_id    = "migra1_upload_ec5_observations",
     conn_id    = "streetspectra-db",
-    input_path = "/tmp/ec5/street-spectra/xxx-{{ds}}.json",
-    dag        = streetspectra_xxx_dag,
+    input_path = "/tmp/ec5/street-spectra/migra1-{{ds}}.json",
+    dag        = migra1_streetspectra_dag,
 )
 
-xxx_download_from_action = ActionDownloadFromStartDateOperator(
-    task_id        = "xxx_download_from_action",
+migra1_download_from_mongo = ActionDownloadFromStartDateOperator(
+    task_id        = "migra1_download_from_mongo",
     conn_id        = "streetspectra-action-database",
     start_date     = "2018-01-01",
-    output_path    = "/tmp/ec5/street-spectra/xxx-action-{{ds}}.json",
-    n_entries      = 10000,                                  
+    output_path    = "/tmp/ec5/street-spectra/migra1-action-{{ds}}.json",
+    n_entries      = 20000,                                  
     project        = "street-spectra", 
     obs_type       = "observation",
-    dag            = streetspectra_xxx_dag,
+    dag            = migra1_streetspectra_dag,
 )
 
-xxx_load2_sql_ec5_observations = SQLInsertObservationsOperator(
-    task_id    = "xxx_load2_sql_ec5_observations",
+migra1_upload_mongo_observations = SQLInsertObservationsOperator(
+    task_id    = "migra1_upload_mongo_observations",
     conn_id    = "streetspectra-db",
-    input_path = "/tmp/ec5/street-spectra/xxx-action-{{ds}}.json",
-    dag        = streetspectra_xxx_dag,
+    input_path = "/tmp/ec5/street-spectra/migra1-action-{{ds}}.json",
+    dag        = migra1_streetspectra_dag,
 )
 
-xxx_export_ec5_observations >> xxx_transform_ec5_observations >> xxx_load_sql_ec5_observations
-
+migra1_export_ec5_observations >> migra1_transform_ec5_observations >> migra1_upload_ec5_observations
+migra1_upload_ec5_observations >> migra1_download_from_mongo        >> migra1_upload_mongo_observations
 
 # =============
 # Maps Workflow
@@ -197,7 +199,7 @@ streetspectra_collect_dag = DAG(
     default_args      = default_args,
     description       = 'StreetSpectra: collect observations',
     #schedule_interval = '@monthly',
-    schedule_interval = '0 12 1 * *', # Execute monthly at midday (12:00)
+    schedule_interval = '0 12 * * *', # Execute daily at midday (12:00)
     start_date        = datetime(year=2019, month=1, day=1),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
 )
@@ -230,9 +232,19 @@ load_ec5_observations = ActionUploadOperator(
     dag        = streetspectra_collect_dag,
 )
 
+# New task to feed SQLite database with Epicollect5 observations
+# in pararllel to feeded MongoDB
+load2_ec5_observations = SQLInsertObservationsOperator(
+    task_id    = "load2_ec5_observations",
+    conn_id    = "streetspectra-db",
+    input_path = "/tmp/ec5/street-spectra/transformed-{{ds}}.json",
+    dag        = streetspectra_collect_dag,
+)
+
+
 clean_up_ec5_files = BashOperator(
     task_id      = "clean_up_ec5_files",
-    bash_command = "rm /tmp/ec5/street-spectra/*{{ds}}.json",
+    bash_command = "rm -f /tmp/ec5/street-spectra/*{{ds}}.json",
     dag        = streetspectra_collect_dag,
 )
 
@@ -261,12 +273,21 @@ load_ec5_old = ActionUploadOperator(
     dag        = streetspectra_collect_dag,
 )
 
+# New task to feed SQLite database with Epicollect5 observations
+# in pararllel to feeded MongoDB
+load2_ec5_old = SQLInsertObservationsOperator(
+    task_id    = "load2_ec5_old",
+    conn_id    = "streetspectra-db",
+    input_path = "/tmp/ec5/street-spectra/old-transformed-{{ds}}.json",
+    dag        = streetspectra_collect_dag,
+)
+
 # -----------------
 # Task dependencies
 # -----------------
 
-export_ec5_observations >> transform_ec5_observations >> load_ec5_observations >> clean_up_ec5_files
-export_ec5_old          >> transform_ec5_old          >> load_ec5_old          >> clean_up_ec5_files
+export_ec5_observations >> transform_ec5_observations >> [load_ec5_observations, load2_ec5_observations] >> clean_up_ec5_files
+export_ec5_old          >> transform_ec5_old          >> [load_ec5_old, load2_ec5_old]                   >> clean_up_ec5_files
 
 # ===========================
 # Zooniverse Feeding Workflow
@@ -300,13 +321,28 @@ manage_subject_sets = ShortCircuitOperator(
     dag           = streetspectra_feed_dag
 )
 
+# check_enough_observations = BranchPythonOperator(
+#     task_id         = "check_enough_observations",
+#     python_callable = check_number_of_entries,
+#     op_kwargs = {
+#         "conn_id"       : "streetspectra-action-database",
+#         "start_date"    : Variable.get("streetspectra_read_tstamp"),    
+#         "n_entries"     : N_ENTRIES,                               
+#         "project"       : "street-spectra",
+#         "true_task_id"  : "download_from_action",
+#         "false_task_id" : "email_no_images",
+#         "obs_type"      : 'observation',
+#     },
+#     dag           = streetspectra_feed_dag
+# )
+
 check_enough_observations = BranchPythonOperator(
     task_id         = "check_enough_observations",
     python_callable = check_number_of_entries,
     op_kwargs = {
-        "conn_id"       : "streetspectra-action-database",
-        "start_date"    : Variable.get("streetspectra_read_tstamp"),    
-        "n_entries"     : N_ENTRIES,                               
+        "conn_id"       : "streetspectra-db",
+        "start_date"    : Variable.get("streetspectra_read_tstamp"),  
+        "n_entries"     : N_ENTRIES,                              
         "project"       : "street-spectra",
         "true_task_id"  : "download_from_action",
         "false_task_id" : "email_no_images",
@@ -314,6 +350,7 @@ check_enough_observations = BranchPythonOperator(
     },
     dag           = streetspectra_feed_dag
 )
+
 
 email_no_images = EmailOperator(
     task_id      = "email_no_images",
