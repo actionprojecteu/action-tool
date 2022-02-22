@@ -60,9 +60,12 @@ default_args = {
 }
 
 
-# ==================================
-# Export from the beginning workflow
-# ==================================
+# ==================
+# Migration workflow
+# ==================
+
+# Collects all observations from Epicollect5 and ACTION MongoDB databases
+# merging them into a SQLite database
 
 migra1_start_date = datetime(year=2018, month=1, day=1).strftime("%Y-%m-%d")
 

@@ -78,9 +78,61 @@ default_args = {
 }
 
 
-# ==================================
-# Export from the beginning workflow
-# ==================================
+
+# =============
+# Maps Workflow
+# =============
+
+my_start_date = datetime(year=2022, month=1, day=1)
+my_date_str   = my_start_date.strftime("%Y-%m-%d")
+
+streetspectra_maps_dag = DAG(
+    'streetspectra_maps_dag',
+    default_args      = default_args,
+    description       = 'StreetSpectra: HTML maps',
+    schedule_interval = '@daily',
+    start_date        = days_ago(1),
+    tags              = ['StreetSpectra', 'ACTION PROJECT'],
+)
+
+# This is a cummulative downloading from the beginning
+jz_export_ec5_observations = EC5ExportEntriesOperator(
+    task_id      = "jz_export_ec5_observations",
+    conn_id      = "streetspectra-epicollect5",
+    start_date   = my_start_date,
+    #start_date   = "{{prev_ds}}",
+    end_date     = "{{ds}}",
+    output_path  = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
+    dag          = streetspectra_maps_dag,
+)
+
+
+jz_transform_ec5_observations = EC5TransformOperator(
+    task_id      = "jz_transform_ec5_observations",
+    input_path   = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
+    output_path  = "/tmp/ec5/street-spectra/jz-{{ds}}.json",
+    dag          = streetspectra_maps_dag,
+)
+
+jz_email_json = EmailOperator(
+    task_id      = "jz_email_json",
+    to           = ("rafael08@ucm.es", "jzamorano@fis.ucm.es"),
+    subject      = "[StreetSpectra] Epicollect V JSON file",
+    html_content = "Hola Jaime: \n Aquí te envío el JSON desde {0} ".format(my_date_str) + "hasta {{ds}} incluidos.",
+    #html_content = "Hola Jaime: \n Aquí te envío el JSON desde {{prev_ds}} hasta {{ds}} incluidos.",
+    files        = ['/tmp/ec5/street-spectra/jz-{{ds}}.json'],
+    dag          = streetspectra_maps_dag,
+)
+
+
+jz_export_ec5_observations >> jz_transform_ec5_observations >> jz_email_json
+
+# ==================
+# Migration workflow
+# ==================
+
+# Collects all observations from Epicollect5 and ACTION MongoDB databases
+# merging them into a SQLite database
 
 migra1_start_date = datetime(year=2018, month=1, day=1).strftime("%Y-%m-%d")
 
@@ -138,53 +190,6 @@ migra1_upload_mongo_observations = SQLInsertObservationsOperator(
 migra1_export_ec5_observations >> migra1_transform_ec5_observations >> migra1_upload_ec5_observations
 migra1_upload_ec5_observations >> migra1_download_from_mongo        >> migra1_upload_mongo_observations
 
-# =============
-# Maps Workflow
-# =============
-
-my_start_date = datetime(year=2022, month=1, day=1)
-my_date_str   = my_start_date.strftime("%Y-%m-%d")
-
-streetspectra_maps_dag = DAG(
-    'streetspectra_maps_dag',
-    default_args      = default_args,
-    description       = 'StreetSpectra: HTML maps',
-    schedule_interval = '@daily',
-    start_date        = days_ago(1),
-    tags              = ['StreetSpectra', 'ACTION PROJECT'],
-)
-
-# This is a cummulative downloading from the beginning
-jz_export_ec5_observations = EC5ExportEntriesOperator(
-    task_id      = "jz_export_ec5_observations",
-    conn_id      = "streetspectra-epicollect5",
-    start_date   = my_start_date,
-    #start_date   = "{{prev_ds}}",
-    end_date     = "{{ds}}",
-    output_path  = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
-    dag          = streetspectra_maps_dag,
-)
-
-
-jz_transform_ec5_observations = EC5TransformOperator(
-    task_id      = "jz_transform_ec5_observations",
-    input_path   = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
-    output_path  = "/tmp/ec5/street-spectra/jz-{{ds}}.json",
-    dag          = streetspectra_maps_dag,
-)
-
-jz_email_json = EmailOperator(
-    task_id      = "jz_email_json",
-    to           = ("rafael08@ucm.es", "jzamorano@fis.ucm.es"),
-    subject      = "[StreetSpectra] Epicollect V JSON file",
-    html_content = "Hola Jaime: \n Aquí te envío el JSON desde {0} ".format(my_date_str) + "hasta {{ds}} incluidos.",
-    #html_content = "Hola Jaime: \n Aquí te envío el JSON desde {{prev_ds}} hasta {{ds}} incluidos.",
-    files        = ['/tmp/ec5/street-spectra/jz-{{ds}}.json'],
-    dag          = streetspectra_maps_dag,
-)
-
-
-jz_export_ec5_observations >> jz_transform_ec5_observations >> jz_email_json
 
 # =========================
 # Observations ETL Workflow
