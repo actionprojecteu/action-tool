@@ -83,8 +83,55 @@ default_args = {
 # Maps Workflow
 # =============
 
-my_start_date = datetime(year=2022, month=1, day=1)
-my_date_str   = my_start_date.strftime("%Y-%m-%d")
+# my_start_date = datetime(year=2022, month=1, day=1)
+# my_date_str   = my_start_date.strftime("%Y-%m-%d")
+
+# streetspectra_maps_dag = DAG(
+#     'streetspectra_maps_dag',
+#     default_args      = default_args,
+#     description       = 'StreetSpectra: HTML maps',
+#     schedule_interval = '@daily',
+#     start_date        = days_ago(1),
+#     tags              = ['StreetSpectra', 'ACTION PROJECT'],
+# )
+
+# # This is a cummulative downloading from the beginning
+# jz_export_ec5_observations = EC5ExportEntriesOperator(
+#     task_id      = "jz_export_ec5_observations",
+#     conn_id      = "streetspectra-epicollect5",
+#     start_date   = my_start_date,
+#     #start_date   = "{{prev_ds}}",
+#     end_date     = "{{ds}}",
+#     output_path  = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
+#     dag          = streetspectra_maps_dag,
+# )
+
+
+# jz_transform_ec5_observations = EC5TransformOperator(
+#     task_id      = "jz_transform_ec5_observations",
+#     input_path   = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
+#     output_path  = "/tmp/ec5/street-spectra/jz-{{ds}}.json",
+#     dag          = streetspectra_maps_dag,
+# )
+
+# jz_email_json = EmailOperator(
+#     task_id      = "jz_email_json",
+#     to           = ("rafael08@ucm.es", "jzamorano@fis.ucm.es"),
+#     subject      = "[StreetSpectra] Epicollect V JSON file",
+#     html_content = "Hola Jaime: \n Aquí te envío el JSON desde {0} ".format(my_date_str) + "hasta {{ds}} incluidos.",
+#     #html_content = "Hola Jaime: \n Aquí te envío el JSON desde {{prev_ds}} hasta {{ds}} incluidos.",
+#     files        = ['/tmp/ec5/street-spectra/jz-{{ds}}.json'],
+#     dag          = streetspectra_maps_dag,
+# )
+
+
+# jz_export_ec5_observations >> jz_transform_ec5_observations >> jz_email_json
+
+from airflow_actionproject.operators.streetspectra import ActionRangedDownloadOperator
+from airflow_actionproject.operators.streetmaps import FoliumMapOperator
+
+ 
+jz_start_date = datetime(year=2022, month=1, day=1).strftime("%Y-%m-%d")
 
 streetspectra_maps_dag = DAG(
     'streetspectra_maps_dag',
@@ -96,36 +143,26 @@ streetspectra_maps_dag = DAG(
 )
 
 # This is a cummulative downloading from the beginning
-jz_export_ec5_observations = EC5ExportEntriesOperator(
-    task_id      = "jz_export_ec5_observations",
-    conn_id      = "streetspectra-epicollect5",
-    start_date   = my_start_date,
-    #start_date   = "{{prev_ds}}",
+jz_export_observations = ActionRangedDownloadOperator(
+    task_id      = "jz_export_observations",
+    conn_id      = "streetspectra-db",
+    start_date   = jz_start_date,
     end_date     = "{{ds}}",
-    output_path  = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
+    project      = 'street-spectra',
+    output_path  = "/tmp/street-spectra/jz-maps-{{ds}}.json",
     dag          = streetspectra_maps_dag,
 )
 
-
-jz_transform_ec5_observations = EC5TransformOperator(
-    task_id      = "jz_transform_ec5_observations",
-    input_path   = "/tmp/ec5/street-spectra/jz-raw-{{ds}}.json",
-    output_path  = "/tmp/ec5/street-spectra/jz-{{ds}}.json",
+jz_html_observations = FoliumMapOperator(
+    task_id      = "jz_html_observations",
+    input_path   = "/tmp/street-spectra/jz-maps-{{ds}}.json",
+    output_path  = "/tmp/street-spectra/jz-maps.html",
+    center_longitude = -3.726111,
+    center_latitude  = 40.45111,
     dag          = streetspectra_maps_dag,
 )
 
-jz_email_json = EmailOperator(
-    task_id      = "jz_email_json",
-    to           = ("rafael08@ucm.es", "jzamorano@fis.ucm.es"),
-    subject      = "[StreetSpectra] Epicollect V JSON file",
-    html_content = "Hola Jaime: \n Aquí te envío el JSON desde {0} ".format(my_date_str) + "hasta {{ds}} incluidos.",
-    #html_content = "Hola Jaime: \n Aquí te envío el JSON desde {{prev_ds}} hasta {{ds}} incluidos.",
-    files        = ['/tmp/ec5/street-spectra/jz-{{ds}}.json'],
-    dag          = streetspectra_maps_dag,
-)
-
-
-jz_export_ec5_observations >> jz_transform_ec5_observations >> jz_email_json
+jz_export_observations >> jz_html_observations
 
 # ==================
 # Migration workflow
