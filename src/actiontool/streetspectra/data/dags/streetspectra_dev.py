@@ -127,11 +127,10 @@ default_args = {
 
 # jz_export_ec5_observations >> jz_transform_ec5_observations >> jz_email_json
 
-from airflow_actionproject.operators.streetspectra import ActionRangedDownloadOperator
-from airflow_actionproject.operators.streetmaps import FoliumMapOperator
+from airflow_actionproject.operators.streetspectra import ActionRangedDownloadOperator, FoliumMapOperator
 
  
-jz_start_date = datetime(year=2022, month=1, day=1).strftime("%Y-%m-%d")
+jz_start_date = datetime(year=2018, month=1, day=1).strftime("%Y-%m-%d")
 
 streetspectra_maps_dag = DAG(
     'streetspectra_maps_dag',
