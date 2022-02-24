@@ -230,8 +230,9 @@ publish_aggregated_csv = ZenodoPublishDatasetOperator(
     file_path   = "/tmp/zooniverse/streetspectra-aggregated.csv",
     description = "CSV file containing aggregated classifications for light sources data and metadata.",
     version     = '{{ execution_date.strftime("%y.%m")}}',
-    creators    = [{'name': "Zamorano, Jaime"}, {'name': "Gonzalez, Rafael"}],
+    creators    = [{'name': "Zamorano, Jaime", 'affiliation': "Universidad Complutense de Madrid"}, {'name': "Gonzalez, Rafael", 'affiliation': "Universidad Complutense de Madrid"}],
     communities = [{'title': "Street Spectra", 'id': "street-spectra"}, {'title':"Action Project", 'id': "actionprojecteu"}],
+    status      = 'draft',
     dag         = streetspectra_aggregate_dag,
 )
 
@@ -244,8 +245,9 @@ publish_individual_csv = ZenodoPublishDatasetOperator(
     file_path   = "/tmp/zooniverse/streetspectra-individual.csv",
     description = "CSV file containing individual classifications for subjects data and metadata.",
     version     = '{{ execution_date.strftime("%y.%m")}}',
-    creators    = [{'name': "Zamorano, Jaime"}, {'name': "Gonzalez, Rafael"}],
+    creators    = [{'name': "Zamorano, Jaime", 'affiliation': "Universidad Complutense de Madrid"}, {'name': "Gonzalez, Rafael", 'affiliation': "Universidad Complutense de Madrid"}],
     communities = [{'title': "Street Spectra", 'id': "street-spectra"}, {'title':"Action Project", 'id': "actionprojecteu"}],
+    status      = 'draft',
     dag         = streetspectra_aggregate_dag,
 )
 
