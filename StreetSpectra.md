@@ -213,3 +213,18 @@ streetspectra-zenodo-sandbox
 
 actiontool streetspectra dags install streetspectra_aggregate
 ```
+
+# Map generation
+
+```bash
+airflow connections add \
+--conn-type scp \
+--conn-host "<host to upload images>" \
+--conn-port 22 \
+--conn-login "<remote login>" \
+--conn-password "<ssh key file path>" \
+--conn-extra '{"jump_hosts": [], "timeout": 15}' \
+--conn-description "Connection to streetspectra image file storage" \
+streetspectra-guaix
+```
+

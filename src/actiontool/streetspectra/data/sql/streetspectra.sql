@@ -198,3 +198,13 @@ CREATE TABLE IF NOT EXISTS epicollect5_t
 
     PRIMARY KEY(image_id)
 );
+
+
+CREATE TABLE IF NOT EXISTS images_t
+(
+    image_id            TEXT,    -- Image GUID
+    uploaded_at         TEXT,    -- Timestamp when it was uploaded to GUAIX
+ 
+    PRIMARY KEY(image_id),
+    FOREIGN KEY(image_id) REFERENCES epicollect5_t(image_id)
+);

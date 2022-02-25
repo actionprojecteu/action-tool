@@ -74,7 +74,6 @@ def purge_collection(connection):
     purge_epicollect5_t(connection)
 
 
-
 # ========
 # COMMANDS
 # ========

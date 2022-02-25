@@ -221,6 +221,13 @@ join_indiv_published = DummyOperator(
     dag          = streetspectra_aggregate_dag,
 )
 
+# dataset creators for Zenodo publication
+CREATORS = [
+    {'name': "Zamorano, Jaime",  'affiliation': "Universidad Complutense de Madrid"},
+    {'name': "Gonzalez, Rafael", 'affiliation': "Universidad Complutense de Madrid"},
+    {'name': "Garcia, Lucia",    'affiliation': "Universidad Complutense de Madrid"}
+]
+
 # Publish the aggregated dataset to Zenodo
 # This operator is valid for anybody wishing to publish datasets to Zenodo
 publish_aggregated_csv = ZenodoPublishDatasetOperator(
@@ -230,7 +237,7 @@ publish_aggregated_csv = ZenodoPublishDatasetOperator(
     file_path   = "/tmp/zooniverse/streetspectra-aggregated.csv",
     description = "CSV file containing aggregated classifications for light sources data and metadata.",
     version     = '{{ execution_date.strftime("%y.%m")}}',
-    creators    = [{'name': "Zamorano, Jaime", 'affiliation': "Universidad Complutense de Madrid"}, {'name': "Gonzalez, Rafael", 'affiliation': "Universidad Complutense de Madrid"}],
+    creators    = CREATORS,
     communities = [{'title': "Street Spectra", 'id': "street-spectra"}, {'title':"Action Project", 'id': "actionprojecteu"}],
     status      = 'draft',  # either 'draft' or 'published'
     dag         = streetspectra_aggregate_dag,
@@ -245,7 +252,7 @@ publish_individual_csv = ZenodoPublishDatasetOperator(
     file_path   = "/tmp/zooniverse/streetspectra-individual.csv",
     description = "CSV file containing individual classifications for subjects data and metadata.",
     version     = '{{ execution_date.strftime("%y.%m")}}',
-    creators    = [{'name': "Zamorano, Jaime", 'affiliation': "Universidad Complutense de Madrid"}, {'name': "Gonzalez, Rafael", 'affiliation': "Universidad Complutense de Madrid"}],
+    creators    = CREATORS,
     communities = [{'title': "Street Spectra", 'id': "street-spectra"}, {'title':"Action Project", 'id': "actionprojecteu"}],
     status      = 'draft',  # either 'draft' or 'published'
     dag         = streetspectra_aggregate_dag,
