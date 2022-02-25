@@ -56,12 +56,17 @@ def purge_epicollect5_t(connection):
     cursor = connection.cursor()
     cursor.execute('DELETE FROM epicollect5_t')
 
+def purge_zenodo_csv_t(connection):
+    log.info("Deleting all contents from table zenodo_csv_t")
+    cursor = connection.cursor()
+    cursor.execute('DELETE FROM zenodo_csv_t')
 
 def purge_classifications(connection):
     purge_light_sources_t(connection)
     purge_spectra_classification_t(connection)
     purge_export_window_t(connection)
     purge_zoo_export_t(connection)
+    purge_zenodo_csv_t(connection)
 
 def purge_collection(connection):
     purge_epicollect5_t(connection)
