@@ -261,7 +261,7 @@ join_published = DummyOperator(
 clean_up_classif_files = BashOperator(
     task_id      = "clean_up_classif_files",
     trigger_rule = "none_failed",    # For execution of just one preceeding branch only
-    bash_command = "rm /tmp/zooniverse/*.csv; rm /tmp/zooniverse/*-{{ds}}.json",
+    bash_command = "rm -f /tmp/zooniverse/*.csv; rm -f /tmp/zooniverse/*-{{ds}}.json",
     dag          = streetspectra_aggregate_dag,
 )
 
