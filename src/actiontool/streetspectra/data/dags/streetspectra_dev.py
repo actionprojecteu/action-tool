@@ -128,20 +128,7 @@ default_args = {
 # jz_export_ec5_observations >> jz_transform_ec5_observations >> jz_email_json
 
 from airflow_actionproject.operators.streetspectra import ActionRangedDownloadOperator, FoliumMapOperator
-from airflow_actionproject.operators.streetspectra import ImagesDownloadOperator
-
-from airflow.providers.ssh.operators.ssh import SSHOperator
-from airflow.providers.ssh.hooks.ssh import SSHHook
-#sshHook = SSHHook(ssh_conn_id="conn-id", key_file='/opt/airflow/keys/ssh.key')
-
-# a hook can also be defined directly in the code:
-sshHook = SSHHook(remote_host='nartex.hst.ucm.es', username='rfg', key_file='/home/rafa/.ssh/nto_rsa')
-
-ls = SSHOperator(
-        task_id="ls",
-        command= "ls -l",
-        ssh_hook = sshHook,
-        dag = streetspectra_maps_dag)
+from airflow_actionproject.operators.streetspectra import ImagesSyncOperator
 
 jz_start_date = datetime(year=2018, month=1, day=1).strftime("%Y-%m-%d")
 
@@ -174,12 +161,13 @@ jz_html_observations = FoliumMapOperator(
     dag          = streetspectra_maps_dag,
 )
 
-jz_download_jpg = ImagesDownloadOperator(
-    task_id    = "jz_download_jpg",
-    conn_id    = "streetspectra-db",
-    output_dir =  "/tmp/street-spectra/jz-maps.html",
+jz_sync_jpg = ImagesSyncOperator(
+    task_id    = "jz_sync_jpg",
+    sql_conn_id= "streetspectra-db",
+    ssh_conn_id= "streetspectra-nartex",
+    temp_dir   = "/tmp/street-spectra/images",
+    remote_dir = "/home/rfg/images",
     project    = 'street-spectra',
-    tps        = 0.5,
     dag        = streetspectra_maps_dag,
 )
 
