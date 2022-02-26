@@ -248,13 +248,24 @@ def duplicates(connection, options):
 def plot(connection, options):
     '''Perform clustering analysis over source light selection'''
     subject_id = options.subject_id
-    compute = options.compute
+    ec5_id     = options.ec5_id
+    compute    = options.compute
     if subject_id is not None:
         Cycler(connection, [(subject_id,)], 
             compute = options.compute, 
             epsilon = options.epsilon,
             fix     = options.fix
         )
+    elif ec5_id is not None:
+        cursor = connection.cursor()
+        filter_dict = {'image_id': ec5_id}
+        cursor.execute("SELECT subject_id FROM spectra_classification_t WHERE image_id = :image_id",filter_dict)
+        Cycler(connection, cursor.fetchall(), 
+            compute = options.compute, 
+            epsilon = options.epsilon,
+            fix     = options.fix
+        )
+
     else:
         cursor = connection.cursor()
         cursor.execute("SELECT DISTINCT subject_id FROM spectra_classification_t ORDER BY subject_id")
