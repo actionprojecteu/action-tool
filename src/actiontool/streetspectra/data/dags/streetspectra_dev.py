@@ -127,7 +127,7 @@ default_args = {
 
 # jz_export_ec5_observations >> jz_transform_ec5_observations >> jz_email_json
 
-from airflow_actionproject.operators.streetspectra import ActionRangedDownloadOperator, FoliumMapOperator
+from airflow_actionproject.operators.streetspectra import ActionRangedDownloadOperator, AddClassificationsOperator, FoliumMapOperator
 from airflow_actionproject.operators.streetspectra import ImagesSyncOperator
 
 jz_start_date = datetime(year=2018, month=1, day=1).strftime("%Y-%m-%d")
@@ -148,6 +148,15 @@ jz_export_observations = ActionRangedDownloadOperator(
     start_date   = jz_start_date,
     end_date     = "{{ds}}",
     project      = 'street-spectra',
+    output_path  = "/tmp/street-spectra/jz-obs-{{ds}}.json",
+    dag          = streetspectra_maps_dag,
+)
+
+# This is a cummulative downloading from the beginning
+jz_add_classifications = AddClassificationsOperator(
+    task_id      = "jz_add_classifications",
+    conn_id      = "streetspectra-db",
+    input_path   = "/tmp/street-spectra/jz-obs-{{ds}}.json",
     output_path  = "/tmp/street-spectra/jz-maps-{{ds}}.json",
     dag          = streetspectra_maps_dag,
 )
