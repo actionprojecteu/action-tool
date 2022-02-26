@@ -79,10 +79,9 @@ class Cycler:
     def load(self, i):
         subject_id = self.subject[i][0]
         log.info(f"Searching for image whose subject id is {subject_id}")
-        filename = get_image(self.conn, subject_id)
+        filename, image_id = get_image(self.conn, subject_id)
         if not filename:
             raise Exception(f"No image for subject-id {subject_id}")
-        #img = plt.imread(filename)
         img = PIL.Image.open(filename)
         width, height = img.size
         if self.axim is None:
@@ -101,7 +100,7 @@ class Cycler:
             self.axim.set_extent(ext)
             self.axe.relim()
             self.axe.autoscale_view()
-        return subject_id
+        return subject_id, image_id
 
 
     def update(self, i):
@@ -131,8 +130,8 @@ class Cycler:
 
         
     def one_database_step(self, i):
-        subject_id = self.load(i)
-        self.axe.set_title(f'Subject {subject_id}\nLight Sources from the database')
+        subject_id, image_id = self.load(i)
+        self.axe.set_title(f'Subject {subject_id}\nEC5 Id {image_id}\nLight Sources from the database')
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT DISTINCT cluster_id 
@@ -167,8 +166,8 @@ class Cycler:
     def one_compute_step(self, i):
         fix = self.fix
         epsilon = self.epsilon
-        subject_id = self.load(i)
-        self.axe.set_title(f'Subject {subject_id}\nDetected light sources by DBSCAN (\u03B5 = {epsilon} px)')
+        subject_id, image_id = self.load(i)
+        self.axe.set_title(f'Subject {subject_id}\nEC5 Id {image_id}\nDetected light sources by DBSCAN (\u03B5 = {epsilon} px)')
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT source_x, source_y 

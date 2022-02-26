@@ -64,24 +64,32 @@ def paging(iterable, headers, size=None, page=10):
 def get_image(connection, subject_id):
     filename = os.path.join(os.sep, "tmp", str(subject_id) + '.jpg')
     result = filename
+    cursor = connection.cursor()
     if os.path.exists(filename):
-    	log.info(f"Getting cached image from {filename}")
-    else:
-        cursor = connection.cursor()
+        log.info(f"Getting cached image from {filename}")
         cursor.execute('''
-            SELECT image_url 
+            SELECT image_id 
             FROM spectra_classification_t 
             WHERE subject_id = :subject_id
             ''',
             {'subject_id': subject_id}
         )
-        image_url = cursor.fetchone()
-        if image_url:
-            image_url = image_url[0]
+        image_id = cursor.fetchone()[0]
+    else:
+        cursor.execute('''
+            SELECT image_url, image_id 
+            FROM spectra_classification_t 
+            WHERE subject_id = :subject_id
+            ''',
+            {'subject_id': subject_id}
+        )
+        image_data = cursor.fetchone()
+        if image_data:
+            image_url, image_id = image_data[0], image_data[1]
             log.info(f"Downloading image from {image_url}")
             response = requests.get(image_url)
             with open(filename,'wb') as fd:
                 fd.write(response.content)
         else:
-            result = None 
-    return result
+            result = None, None
+    return result, image_id
