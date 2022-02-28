@@ -27,7 +27,9 @@ from airflow.operators.python import PythonOperator
 # custom Airflow imports
 # ----------------------
 
-from airflow_actionproject import __version__
+from actiontool import __version__
+
+from airflow_actionproject import __version__ as __lib_version__
 from airflow_actionproject.operators.epicollect5   import EC5ExportEntriesOperator
 from airflow_actionproject.operators.action        import ActionDownloadFromStartDateOperator
 from airflow_actionproject.operators.streetspectra.epicollect5 import EC5TransformOperator
@@ -127,4 +129,4 @@ migra1_export_ec5_observations >> migra1_transform_ec5_observations >> migra1_up
 migra1_upload_ec5_observations >> migra1_download_from_mongo        >> migra1_upload_mongo_observations
 
 if __name__ == '__main__':
-    print(f"DAG version {__version__}")
+    print(f"DAG version: {__version__}, library version {__lib_version__}")

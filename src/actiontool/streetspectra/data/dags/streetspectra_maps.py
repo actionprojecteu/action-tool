@@ -28,8 +28,9 @@ from airflow.operators.email  import EmailOperator
 # custom Airflow imports
 # ----------------------
 
-from airflow_actionproject import __version__
+from actiontool import __version__
 
+from airflow_actionproject import __version__ as __lib_version__
 from airflow_actionproject.operators.ssh import SCPOperator
 from airflow_actionproject.operators.streetspectra.sqlite import ActionRangedDownloadOperator
 from airflow_actionproject.operators.streetspectra.maps   import AddClassificationsOperator, FoliumMapOperator, ImagesSyncOperator
@@ -125,4 +126,4 @@ map_export_observations >> map_add_classifications >> map_generate_html >> map_c
 
 
 if __name__ == '__main__':
-    print(f"DAG version {__version__}")
+    print(f"DAG version: {__version__}, library version {__lib_version__}")

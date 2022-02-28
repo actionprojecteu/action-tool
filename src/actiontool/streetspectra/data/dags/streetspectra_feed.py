@@ -23,12 +23,13 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.python import ShortCircuitOperator, BranchPythonOperator
 from airflow.operators.email  import EmailOperator
 
-
 #-----------------------
 # custom Airflow imports
 # ----------------------
 
-from airflow_actionproject import __version__
+from actiontool import __version__
+
+from airflow_actionproject import __version__ as __lib_version__
 from airflow_actionproject.callables.zooniverse    import zooniverse_manage_subject_sets
 from airflow_actionproject.callables.streetspectra import check_number_of_entries
 from airflow_actionproject.operators.streetspectra.sqlite import ActionDownloadFromVariableDateOperator
@@ -164,4 +165,4 @@ download_from_action >> upload_new_subject_set >> email_new_subject_set
 [email_new_subject_set, email_no_images] >> cleanup_action_obs_file
 
 if __name__ == '__main__':
-    print(f"DAG version {__version__}")
+    print(f"DAG version: {__version__}, library version {__lib_version__}")

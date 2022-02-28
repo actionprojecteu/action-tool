@@ -25,7 +25,9 @@ from airflow.operators.bash import BashOperator
 # custom Airflow imports
 # ----------------------
 
-from airflow_actionproject import __version__
+from actiontool import __version__
+
+from airflow_actionproject import __version__ as __lib_version__
 from airflow_actionproject.operators.epicollect5   import EC5ExportEntriesOperator
 from airflow_actionproject.operators.action        import ActionUploadOperator
 from airflow_actionproject.operators.streetspectra.epicollect5 import EC5TransformOperator
@@ -166,4 +168,4 @@ export_ec5_observations >> transform_ec5_observations >> [load_ec5_observations,
 export_ec5_old          >> transform_ec5_old          >> [load_ec5_old, load2_ec5_old]                   >> clean_up_ec5_files
 
 if __name__ == '__main__':
-    print(f"DAG version {__version__}")
+    print(f"DAG version: {__version__}, library version {__lib_version__}")

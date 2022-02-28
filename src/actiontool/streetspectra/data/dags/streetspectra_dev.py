@@ -32,7 +32,9 @@ from airflow.providers.sqlite.operators.sqlite import SqliteOperator
 # custom Airflow imports
 # ----------------------
 
-from airflow_actionproject import __version__
+from actiontool import __version__
+
+from airflow_actionproject import __version__ as __lib_version__
 from airflow_actionproject.operators.epicollect5   import EC5ExportEntriesOperator
 from airflow_actionproject.operators.zooniverse    import ZooniverseExportOperator, ZooniverseDeltaOperator, ZooniverseTransformOperator
 from airflow_actionproject.operators.zenodo        import ZenodoPublishDatasetOperator
@@ -658,4 +660,4 @@ export_individual_csv >> check_new_individual_csv >> [publish_individual_csv, jo
 [join_published, skip_to_end] >> clean_up_classif_files
 
 if __name__ == '__main__':
-    print(f"DAG version {__version__}")
+    print(f"DAG version: {__version__}, library version {__lib_version__}")
