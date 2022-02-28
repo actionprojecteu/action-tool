@@ -29,11 +29,10 @@ from airflow.operators.email  import EmailOperator
 # ----------------------
 
 from airflow_actionproject import __version__
-from airflow_actionproject.operators.streetspectra import ActionDownloadFromVariableDateOperator
-
-from airflow_actionproject.operators.streetspectra import ZooImportOperator
 from airflow_actionproject.callables.zooniverse    import zooniverse_manage_subject_sets
 from airflow_actionproject.callables.streetspectra import check_number_of_entries
+from airflow_actionproject.operators.streetspectra.sqlite import ActionDownloadFromVariableDateOperator
+from airflow_actionproject.operators.streetspectra.zooniverse import ZooImportOperator
 
 # ---------------------
 # Default DAG arguments

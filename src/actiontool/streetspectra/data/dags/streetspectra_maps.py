@@ -30,9 +30,9 @@ from airflow.operators.email  import EmailOperator
 
 from airflow_actionproject import __version__
 
-from airflow_actionproject.operators.streetspectra import ActionRangedDownloadOperator, AddClassificationsOperator, FoliumMapOperator
-from airflow_actionproject.operators.streetspectra import ImagesSyncOperator
 from airflow_actionproject.operators.ssh import SCPOperator
+from airflow_actionproject.operators.streetspectra.sqlite import ActionRangedDownloadOperator
+from airflow_actionproject.operators.streetspectra.maps   import AddClassificationsOperator, FoliumMapOperator, ImagesSyncOperator
 
 # ---------------------
 # Default DAG arguments

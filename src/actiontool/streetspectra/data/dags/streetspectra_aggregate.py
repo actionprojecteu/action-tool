@@ -28,10 +28,10 @@ from airflow.operators.python import BranchPythonOperator
 # ----------------------
 
 from airflow_actionproject import __version__
+from airflow_actionproject.callables.streetspectra import check_new_subjects, check_new_csv_version
 from airflow_actionproject.operators.zooniverse    import ZooniverseExportOperator, ZooniverseDeltaOperator, ZooniverseTransformOperator
 from airflow_actionproject.operators.zenodo        import ZenodoPublishDatasetOperator
-from airflow_actionproject.operators.streetspectra import PreprocessClassifOperator, AggregateOperator, AggregateCSVExportOperator, IndividualCSVExportOperator
-from airflow_actionproject.callables.streetspectra import check_new_subjects, check_new_csv_version
+from airflow_actionproject.operators.streetspectra.zooniverse import PreprocessClassifOperator, AggregateOperator, AggregateCSVExportOperator, IndividualCSVExportOperator
 
 # ---------------------
 # Default DAG arguments

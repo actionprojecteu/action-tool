@@ -28,7 +28,8 @@ from airflow.operators.bash import BashOperator
 from airflow_actionproject import __version__
 from airflow_actionproject.operators.epicollect5   import EC5ExportEntriesOperator
 from airflow_actionproject.operators.action        import ActionUploadOperator
-from airflow_actionproject.operators.streetspectra import EC5TransformOperator, SQLInsertObservationsOperator
+from airflow_actionproject.operators.streetspectra.epicollect5 import EC5TransformOperator
+from airflow_actionproject.operators.streetspectra.sqlite import InsertObservationsOperator
 
 # ---------------------
 # Default DAG arguments
@@ -105,7 +106,7 @@ load_ec5_observations = ActionUploadOperator(
 
 # New task to feed SQLite database with Epicollect5 observations
 # in pararllel to feeded MongoDB
-load2_ec5_observations = SQLInsertObservationsOperator(
+load2_ec5_observations = InsertObservationsOperator(
     task_id    = "load2_ec5_observations",
     conn_id    = "streetspectra-db",
     input_path = "/tmp/streetspectra/collect/ec5_{{ds}}_transformed.json",
@@ -149,7 +150,7 @@ load_ec5_old = ActionUploadOperator(
 
 # New task to feed SQLite database with Epicollect5 observations
 # in pararllel to feeded MongoDB
-load2_ec5_old = SQLInsertObservationsOperator(
+load2_ec5_old = InsertObservationsOperator(
     task_id    = "load2_ec5_old",
     conn_id    = "streetspectra-db",
     input_path = "/tmp/streetspectra/collect/ec5_{{ds}}_old_transformed.json",

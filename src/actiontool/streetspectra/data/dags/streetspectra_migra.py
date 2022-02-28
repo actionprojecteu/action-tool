@@ -30,7 +30,9 @@ from airflow.operators.python import PythonOperator
 from airflow_actionproject import __version__
 from airflow_actionproject.operators.epicollect5   import EC5ExportEntriesOperator
 from airflow_actionproject.operators.action        import ActionDownloadFromStartDateOperator
-from airflow_actionproject.operators.streetspectra import EC5TransformOperator,  SQLInsertObservationsOperator
+from airflow_actionproject.operators.streetspectra.epicollect5 import EC5TransformOperator
+from airflow_actionproject.operators.streetspectra.sqlite import InsertObservationsOperator
+
 
 # ---------------------
 # Default DAG arguments
@@ -96,7 +98,7 @@ migra1_transform_ec5_observations = EC5TransformOperator(
     dag          = migra1_streetspectra_dag,
 )
 
-migra1_upload_ec5_observations = SQLInsertObservationsOperator(
+migra1_upload_ec5_observations = InsertObservationsOperator(
     task_id    = "migra1_upload_ec5_observations",
     conn_id    = "streetspectra-db",
     input_path = "/tmp/streetspectra/migra/ec5_{{ds}}.json",
@@ -114,7 +116,7 @@ migra1_download_from_mongo = ActionDownloadFromStartDateOperator(
     dag            = migra1_streetspectra_dag,
 )
 
-migra1_upload_mongo_observations = SQLInsertObservationsOperator(
+migra1_upload_mongo_observations = InsertObservationsOperator(
     task_id    = "migra1_upload_mongo_observations",
     conn_id    = "streetspectra-db",
     input_path = "/tmp/streetspectra/migra/action_{{ds}}.json",
