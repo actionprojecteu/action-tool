@@ -27,6 +27,7 @@ from airflow.operators.python import BranchPythonOperator
 # custom Airflow imports
 # ----------------------
 
+from airflow_actionproject import __version__
 from airflow_actionproject.operators.zooniverse    import ZooniverseExportOperator, ZooniverseDeltaOperator, ZooniverseTransformOperator
 from airflow_actionproject.operators.zenodo        import ZenodoPublishDatasetOperator
 from airflow_actionproject.operators.streetspectra import PreprocessClassifOperator, AggregateOperator, AggregateCSVExportOperator, IndividualCSVExportOperator
@@ -284,3 +285,6 @@ export_aggregated_csv >> check_new_aggregated_csv >> [publish_aggregated_csv, jo
 export_individual_csv >> check_new_individual_csv >> [publish_individual_csv, join_indiv_published]
 [join_aggre_published, join_indiv_published] >> join_published
 [join_published, skip_to_end] >> clean_up_classif_files
+
+if __name__ == '__main__':
+    print(f"DAG version {__version__}")

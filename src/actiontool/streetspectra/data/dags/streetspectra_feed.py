@@ -28,12 +28,11 @@ from airflow.operators.email  import EmailOperator
 # custom Airflow imports
 # ----------------------
 
-#from airflow_actionproject.operators.action        import ActionDownloadFromVariableDateOperator
+from airflow_actionproject import __version__
 from airflow_actionproject.operators.streetspectra import ActionDownloadFromVariableDateOperator
 
 from airflow_actionproject.operators.streetspectra import ZooImportOperator
 from airflow_actionproject.callables.zooniverse    import zooniverse_manage_subject_sets
-#from airflow_actionproject.callables.action        import check_number_of_entries
 from airflow_actionproject.callables.streetspectra import check_number_of_entries
 
 # ---------------------
@@ -164,3 +163,6 @@ cleanup_action_obs_file = BashOperator(
 manage_subject_sets  >> check_enough_observations >> [download_from_action,  email_no_images]
 download_from_action >> upload_new_subject_set >> email_new_subject_set
 [email_new_subject_set, email_no_images] >> cleanup_action_obs_file
+
+if __name__ == '__main__':
+    print(f"DAG version {__version__}")

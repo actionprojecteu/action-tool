@@ -25,6 +25,7 @@ from airflow.operators.bash import BashOperator
 # custom Airflow imports
 # ----------------------
 
+from airflow_actionproject import __version__
 from airflow_actionproject.operators.epicollect5   import EC5ExportEntriesOperator
 from airflow_actionproject.operators.action        import ActionUploadOperator
 from airflow_actionproject.operators.streetspectra import EC5TransformOperator, SQLInsertObservationsOperator
@@ -162,3 +163,6 @@ load2_ec5_old = SQLInsertObservationsOperator(
 
 export_ec5_observations >> transform_ec5_observations >> [load_ec5_observations, load2_ec5_observations] >> clean_up_ec5_files
 export_ec5_old          >> transform_ec5_old          >> [load_ec5_old, load2_ec5_old]                   >> clean_up_ec5_files
+
+if __name__ == '__main__':
+    print(f"DAG version {__version__}")
