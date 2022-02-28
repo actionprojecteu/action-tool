@@ -147,7 +147,7 @@ map_sync_images = ImagesSyncOperator(
     dag        = streetspectra_maps_dag,
 )
 
-map_export_observations >> map_add_classifications >> map_generate_html >> map_sync_images
+map_export_observations >> map_add_classifications >> map_generate_html >> map_copy_html >> map_sync_images
 
 # ==================
 # Migration workflow
