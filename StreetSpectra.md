@@ -190,8 +190,8 @@ airflow connections add \
 streetspectra-zenodo
 ```
 
-* The `password` field contains the Zenodo API Key.
-* The `extra` field contains the HTTP page size and the transactions per second rate limit for search requests.
+* The `conn-password` field contains the Zenodo API Key.
+* The `conn-extra` field contains a JSON string with the HTTP page size and the transactions per second rate limit for search requests.
 
 For testing purposes, an extra connection to Zenodo sandbox environment may be created:
 
@@ -214,7 +214,10 @@ streetspectra-zenodo-sandbox
 actiontool streetspectra dags install streetspectra_aggregate
 ```
 
-# Map generation
+# Map generation workflow
+
+Maps are generated locally in Airflow's host and must be copied to remote StreetSpectra image storage server
+by SCP. The following connection defines this SSH connection.
 
 ```bash
 airflow connections add \
@@ -223,8 +226,15 @@ airflow connections add \
 --conn-port 22 \
 --conn-login "<remote login>" \
 --conn-password "<ssh key file path>" \
+--conn-schema "<path to document root dir>" \
 --conn-extra '{"jump_hosts": [], "timeout": 15}' \
 --conn-description "Connection to streetspectra image file storage" \
 streetspectra-guaix
 ```
+
+* The `conn.password` field contains a path to the local SSH private key file
+* The `conn-schema` field defines de "document root". All images and master HTML file will be copied relative to this path.
+* The `conn-extra` field contains a JSON string with additional connection parameters:
+	-  `timeout` in seconds for the SSH connection. Exceeding this timeout will fail the connection.
+	- `jump_hosts` contains an array of jump hosts, if necessary. Should set to the empty array `[]` if no jump hosts are needed.
 

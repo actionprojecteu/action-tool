@@ -95,41 +95,43 @@ default_args = {
 # )
 
 # # This is a cummulative downloading from the beginning
-# jz_export_ec5_observations = EC5ExportEntriesOperator(
-#     task_id      = "jz_export_ec5_observations",
+# map_export_ec5_observations = EC5ExportEntriesOperator(
+#     task_id      = "map_export_ec5_observations",
 #     conn_id      = "streetspectra-epicollect5",
 #     start_date   = my_start_date,
 #     #start_date   = "{{prev_ds}}",
 #     end_date     = "{{ds}}",
-#     output_path  = "/tmp/streetspectra/collect/ec5_jz_raw_{{ds}}.json",
+#     output_path  = "/tmp/streetspectra/collect/ec5_map_raw_{{ds}}.json",
 #     dag          = streetspectra_maps_dag,
 # )
 
 
-# jz_transform_ec5_observations = EC5TransformOperator(
-#     task_id      = "jz_transform_ec5_observations",
-#     input_path   = "/tmp/streetspectra/collect/ec5_jz_raw_{{ds}}.json",
-#     output_path  = "/tmp/streetspectra/collect/ec5_jz_{{ds}}.json",
+# map_transform_ec5_observations = EC5TransformOperator(
+#     task_id      = "map_transform_ec5_observations",
+#     input_path   = "/tmp/streetspectra/collect/ec5_map_raw_{{ds}}.json",
+#     output_path  = "/tmp/streetspectra/collect/ec5_map_{{ds}}.json",
 #     dag          = streetspectra_maps_dag,
 # )
 
-# jz_email_json = EmailOperator(
-#     task_id      = "jz_email_json",
+# map_email_json = EmailOperator(
+#     task_id      = "map_email_json",
 #     to           = ("rafael08@ucm.es", "jzamorano@fis.ucm.es"),
 #     subject      = "[StreetSpectra] Epicollect V JSON file",
 #     html_content = "Hola Jaime: \n Aquí te envío el JSON desde {0} ".format(my_date_str) + "hasta {{ds}} incluidos.",
 #     #html_content = "Hola Jaime: \n Aquí te envío el JSON desde {{prev_ds}} hasta {{ds}} incluidos.",
-#     files        = ['/tmp/streetspectra/collect/ec5_jz_{{ds}}.json'],
+#     files        = ['/tmp/streetspectra/collect/ec5_map_{{ds}}.json'],
 #     dag          = streetspectra_maps_dag,
 # )
 
 
-# jz_export_ec5_observations >> jz_transform_ec5_observations >> jz_email_json
+# map_export_ec5_observations >> map_transform_ec5_observations >> map_email_json
 
 from airflow_actionproject.operators.streetspectra import ActionRangedDownloadOperator, AddClassificationsOperator, FoliumMapOperator
 from airflow_actionproject.operators.streetspectra import ImagesSyncOperator
+from airflow_actionproject.operators.ssh import SCPOperator
 
-jz_start_date = datetime(year=2018, month=1, day=1).strftime("%Y-%m-%d")
+
+map_start_date = datetime(year=2018, month=1, day=1).strftime("%Y-%m-%d")
 
 streetspectra_maps_dag = DAG(
     'streetspectra_maps_dag',
@@ -141,45 +143,53 @@ streetspectra_maps_dag = DAG(
 )
 
 # This is a cummulative downloading from the beginning
-jz_export_observations = ActionRangedDownloadOperator(
-    task_id      = "jz_export_observations",
+map_export_observations = ActionRangedDownloadOperator(
+    task_id      = "map_export_observations",
     conn_id      = "streetspectra-db",
-    start_date   = jz_start_date,
+    start_date   = map_start_date,
     end_date     = "{{ds}}",
     project      = 'street-spectra',
-    output_path  = "/tmp/street-spectra/jz-obs_{{ds}}.json",
+    output_path  = "/tmp/streetspectra/maps/observations_{{ds}}.json",
     dag          = streetspectra_maps_dag,
 )
 
 # This is a cummulative downloading from the beginning
-jz_add_classifications = AddClassificationsOperator(
-    task_id      = "jz_add_classifications",
+map_add_classifications = AddClassificationsOperator(
+    task_id      = "map_add_classifications",
     conn_id      = "streetspectra-db",
-    input_path   = "/tmp/street-spectra/jz-obs_{{ds}}.json",
-    output_path  = "/tmp/street-spectra/jz-maps_{{ds}}.json",
+    input_path   = "/tmp/streetspectra/maps/observations_{{ds}}.json",
+    output_path  = "/tmp/streetspectra/maps/observations_classifications_{{ds}}.json",
     dag          = streetspectra_maps_dag,
 )
 
-jz_html_observations = FoliumMapOperator(
-    task_id      = "jz_html_observations",
-    input_path   = "/tmp/street-spectra/jz-maps_{{ds}}.json",
-    output_path  = "/tmp/street-spectra/jz-maps.html",
+map_generate_html = FoliumMapOperator(
+    task_id      = "map_generate_html",
+    input_path   = "/tmp/streetspectra/maps/observations_classifications_{{ds}}.json",
+    output_path  = "/tmp/streetspectra/maps/streetspectra_map.html",
     center_longitude = -3.726111,
     center_latitude  = 40.45111,
     dag          = streetspectra_maps_dag,
 )
 
-jz_sync_jpg = ImagesSyncOperator(
-    task_id    = "jz_sync_jpg",
+map_copy_html = SCPOperator(
+    task_id     = "map_copy_html",
+    ssh_conn_id = "streetspectra-guaix",
+    local_path  = "/tmp/streetspectra/maps/streetspectra_map.html",
+    remote_path = "Street-Spectra/street-spectra_map.html", # relatice to a doc root setup by ssh_conn_id
+    dag        = streetspectra_maps_dag,
+)
+
+map_sync_images = ImagesSyncOperator(
+    task_id    = "map_sync_images",
     sql_conn_id= "streetspectra-db",
-    ssh_conn_id= "streetspectra-nartex",
-    temp_dir   = "/tmp/street-spectra/images",
-    remote_dir = "/home/rfg/images",
+    ssh_conn_id= "streetspectra-guaix",
+    temp_dir   = "/tmp/streetspectra/maps/images",
+    remote_slug= "Street-Spectra/StreetSpectra_pictures",
     project    = 'street-spectra',
     dag        = streetspectra_maps_dag,
 )
 
-jz_export_observations >> jz_html_observations
+map_export_observations >> map_add_classifications >> map_generate_html >> map_sync_images
 
 # ==================
 # Migration workflow
