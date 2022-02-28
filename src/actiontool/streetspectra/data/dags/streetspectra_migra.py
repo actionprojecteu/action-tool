@@ -42,7 +42,7 @@ default_args = {
     'email'           : ("astrorafael@gmail.com",), # CAMBIAR AL VERDADERO EN PRODUCCION
     'email_on_failure': False,                      # CAMBIAR A True EN PRODUCCION
     'email_on_retry'  : False,
-    'retries'         : 1,
+    'retries'         : 0,
     'retry_delay'     : timedelta(minutes=5),
     # 'queue': 'bash_queue',
     # 'pool': 'backfill',
@@ -84,21 +84,21 @@ migra1_export_ec5_observations = EC5ExportEntriesOperator(
     conn_id      = "streetspectra-epicollect5",
     start_date   = migra1_start_date,
     end_date     = "{{ds}}",
-    output_path  = "/tmp/ec5/street-spectra/migra1-raw-{{ds}}.json",
+    output_path  = "/tmp/streetspectra/migra/ec5_raw_{{ds}}.json",
     dag          = migra1_streetspectra_dag,
 )
 
 migra1_transform_ec5_observations = EC5TransformOperator(
     task_id      = "migra1_transform_ec5_observations",
-    input_path   = "/tmp/ec5/street-spectra/migra1-raw-{{ds}}.json",
-    output_path  = "/tmp/ec5/street-spectra/migra1-{{ds}}.json",
+    input_path   = "/tmp/streetspectra/migra/ec5_raw_{{ds}}.json",
+    output_path  = "/tmp/streetspectra/migra/ec5_{{ds}}.json",
     dag          = migra1_streetspectra_dag,
 )
 
 migra1_upload_ec5_observations = SQLInsertObservationsOperator(
     task_id    = "migra1_upload_ec5_observations",
     conn_id    = "streetspectra-db",
-    input_path = "/tmp/ec5/street-spectra/migra1-{{ds}}.json",
+    input_path = "/tmp/streetspectra/migra/ec5_{{ds}}.json",
     dag        = migra1_streetspectra_dag,
 )
 
@@ -106,7 +106,7 @@ migra1_download_from_mongo = ActionDownloadFromStartDateOperator(
     task_id        = "migra1_download_from_mongo",
     conn_id        = "streetspectra-action-database",
     start_date     = "2018-01-01",
-    output_path    = "/tmp/ec5/street-spectra/migra1-action-{{ds}}.json",
+    output_path    = "/tmp/streetspectra/migra/action_{{ds}}.json",
     n_entries      = 20000,                                  
     project        = "street-spectra", 
     obs_type       = "observation",
@@ -116,7 +116,7 @@ migra1_download_from_mongo = ActionDownloadFromStartDateOperator(
 migra1_upload_mongo_observations = SQLInsertObservationsOperator(
     task_id    = "migra1_upload_mongo_observations",
     conn_id    = "streetspectra-db",
-    input_path = "/tmp/ec5/street-spectra/migra1-action-{{ds}}.json",
+    input_path = "/tmp/streetspectra/migra/action_{{ds}}.json",
     dag        = migra1_streetspectra_dag,
 )
 

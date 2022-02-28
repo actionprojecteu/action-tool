@@ -43,7 +43,7 @@ default_args = {
     'email'           : ("developer@actionproject.eu",), # CAMBIAR AL VERDADERO EN PRODUCCION
     'email_on_failure': True,                       # CAMBIAR A True EN PRODUCCION
     'email_on_retry'  : False,
-    'retries'         : 1,
+    'retries'         : 0,
     'retry_delay'     : timedelta(minutes=5),
     # 'queue': 'bash_queue',
     # 'pool': 'backfill',
@@ -59,6 +59,7 @@ default_args = {
     # 'sla_miss_callback': yet_another_function,
     # 'trigger_rule': 'all_success'
 }
+
 
 
 
@@ -93,7 +94,7 @@ streetspectra_aggregate_dag = DAG(
 export_classifications = ZooniverseExportOperator(
     task_id     = "export_classifications",
     conn_id     = "streetspectra-zooniverse",               # CAMBIAR AL conn_id DE PRODUCCION
-    output_path = "/tmp/zooniverse/complete-{{ds}}.json",
+    output_path = "/tmp/streetspectra/aggregate/zoo_complete_{{ds}}.json",
     generate    = True, 
     wait        = True, 
     timeout     = 600,
@@ -106,8 +107,8 @@ export_classifications = ZooniverseExportOperator(
 only_new_classifications = ZooniverseDeltaOperator(
     task_id       = "only_new_classifications",
     conn_id       = "streetspectra-db",
-    input_path    = "/tmp/zooniverse/complete-{{ds}}.json",
-    output_path   = "/tmp/zooniverse/subset-{{ds}}.json",
+    input_path    = "/tmp/streetspectra/aggregate/zoo_complete_{{ds}}.json",
+    output_path   = "/tmp/streetspectra/aggregate/zoo_subset_{{ds}}.json",
     start_date_threshold  = "2021-09-01",
     dag           = streetspectra_aggregate_dag,
 )
@@ -117,8 +118,8 @@ only_new_classifications = ZooniverseDeltaOperator(
 # This is valid for any project that uses the ACTION database API
 transform_classifications = ZooniverseTransformOperator(
     task_id      = "transform_classifications",
-    input_path   = "/tmp/zooniverse/subset-{{ds}}.json",
-    output_path  = "/tmp/zooniverse/transformed-subset-{{ds}}.json",
+    input_path   = "/tmp/streetspectra/aggregate/zoo_subset_{{ds}}.json",
+    output_path  = "/tmp/streetspectra/aggregate/zoo_transformed-subset_{{ds}}.json",
     project      = "street-spectra",
     dag          = streetspectra_aggregate_dag,
 )
@@ -129,7 +130,7 @@ transform_classifications = ZooniverseTransformOperator(
 preprocess_classifications = PreprocessClassifOperator(
     task_id    = "preprocess_classifications",
     conn_id    = "streetspectra-db",
-    input_path = "/tmp/zooniverse/transformed-subset-{{ds}}.json",
+    input_path = "/tmp/streetspectra/aggregate/zoo_transformed-subset_{{ds}}.json",
     dag        = streetspectra_aggregate_dag,
 )
 
@@ -169,7 +170,7 @@ aggregate_classifications = AggregateOperator(
 export_aggregated_csv = AggregateCSVExportOperator(
     task_id     = "export_aggregated_csv",
     conn_id     = "streetspectra-db",
-    output_path = "/tmp/zooniverse/streetspectra-aggregated.csv",
+    output_path = "/tmp/streetspectra/aggregate/streetspectra-aggregated.csv",
     dag         = streetspectra_aggregate_dag,
 )
 
@@ -178,7 +179,7 @@ export_aggregated_csv = AggregateCSVExportOperator(
 export_individual_csv = IndividualCSVExportOperator(
     task_id     = "export_individual_csv",
     conn_id     = "streetspectra-db",
-    output_path = "/tmp/zooniverse/streetspectra-individual.csv",
+    output_path = "/tmp/streetspectra/aggregate/streetspectra-individual.csv",
     dag         = streetspectra_aggregate_dag,
 )
 
@@ -188,7 +189,7 @@ check_new_individual_csv = BranchPythonOperator(
     python_callable = check_new_csv_version,
     op_kwargs = {
         "conn_id"       : "streetspectra-db",
-        "input_path"    : "/tmp/zooniverse/streetspectra-individual.csv",
+        "input_path"    : "/tmp/streetspectra/aggregate/streetspectra-individual.csv",
         "input_type"    : "individual",
         "true_task_id"  : "publish_individual_csv",
         "false_task_id" : "join_indiv_published",
@@ -201,7 +202,7 @@ check_new_aggregated_csv = BranchPythonOperator(
     python_callable = check_new_csv_version,
     op_kwargs = {
         "conn_id"       : "streetspectra-db",
-        "input_path"    : "/tmp/zooniverse/streetspectra-aggregated.csv",
+        "input_path"    : "/tmp/streetspectra/aggregate/streetspectra-aggregated.csv",
         "input_type"    : "aggregated",
         "true_task_id"  : "publish_aggregated_csv",
         "false_task_id" : "join_aggre_published",
@@ -234,7 +235,7 @@ publish_aggregated_csv = ZenodoPublishDatasetOperator(
     task_id     = "publish_aggregated_csv",
     conn_id     = "streetspectra-zenodo",                   # CAMBIAR AL conn_id DE PRODUCCION
     title       = "Street Spectra aggregated classifications",
-    file_path   = "/tmp/zooniverse/streetspectra-aggregated.csv",
+    file_path   = "/tmp/streetspectra/aggregate/streetspectra-aggregated.csv",
     description = "CSV file containing aggregated classifications for light sources data and metadata.",
     version     = '{{ execution_date.strftime("%y.%m")}}',
     creators    = CREATORS,
@@ -249,7 +250,7 @@ publish_individual_csv = ZenodoPublishDatasetOperator(
     task_id     = "publish_individual_csv",
     conn_id     = "streetspectra-zenodo",               # CAMBIAR AL conn_id DE PRODUCCION
     title       = "Street Spectra individual classifications",
-    file_path   = "/tmp/zooniverse/streetspectra-individual.csv",
+    file_path   = "/tmp/streetspectra/aggregate/streetspectra-individual.csv",
     description = "CSV file containing individual classifications for subjects data and metadata.",
     version     = '{{ execution_date.strftime("%y.%m")}}',
     creators    = CREATORS,
@@ -268,7 +269,7 @@ join_published = DummyOperator(
 clean_up_classif_files = BashOperator(
     task_id      = "clean_up_classif_files",
     trigger_rule = "none_failed",    # For execution of just one preceeding branch only
-    bash_command = "rm -f /tmp/zooniverse/*.csv; rm -f /tmp/zooniverse/*-{{ds}}.json",
+    bash_command = "rm -f /tmp/streetspectra/aggregate/*.csv; rm -f /tmp/streetspectra/aggregate/*_{{ds}}.json",
     dag          = streetspectra_aggregate_dag,
 )
 

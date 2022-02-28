@@ -1,9 +1,6 @@
 #  Inmediato
 
-Añadir a Lucia García
-* revisar los retries por tarea. Para muchas no tiene sentido hacer retries.
 
-# Incoporar la generacion de mapas y copiarlos al sitio web de GUAIX o lo que sea
-
-
- 	(venv_airflow)  (main) ~/repos/action-tool$ airflow dags test streetspectra_maps_dag YYYY-MM-DD
+* Hacer un nuevo DAG para la generacion de mapas y que se ejecute diariamente a las 13:00
+* Enviar un mail cuando se cuelque un nuevo dataset
+* generar paquetes nuevos para Esteban, con version nueva

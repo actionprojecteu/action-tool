@@ -40,7 +40,7 @@ default_args = {
     'email'           : ("developer@actionproject.eu","astrorafael@gmail.com"), # CAMBIAR AL VERDADERO EN PRODUCCION
     'email_on_failure': True,                       # CAMBIAR A True EN PRODUCCION
     'email_on_retry'  : False,
-    'retries'         : 2,
+    'retries'         : 0,
     'retry_delay'     : timedelta(minutes=30),
     # 'queue': 'bash_queue',
     # 'pool': 'backfill',
@@ -84,21 +84,21 @@ export_ec5_observations = EC5ExportEntriesOperator(
     conn_id      = "streetspectra-epicollect5",
     start_date   = "{{ds}}",
     end_date     = "{{next_ds}}",
-    output_path  = "/tmp/ec5/street-spectra/{{ds}}.json",
+    output_path  = "/tmp/streetspectra/collect/ec5_{{ds}}.json",
     dag          = streetspectra_collect_dag,
 )
 
 transform_ec5_observations = EC5TransformOperator(
     task_id      = "transform_ec5_observations",
-    input_path   = "/tmp/ec5/street-spectra/{{ds}}.json",
-    output_path  = "/tmp/ec5/street-spectra/transformed-{{ds}}.json",
+    input_path   = "/tmp/streetspectra/collect/ec5_{{ds}}.json",
+    output_path  = "/tmp/streetspectra/collect/ec5_{{ds}}_transformed.json",
     dag          = streetspectra_collect_dag,
 )
 
 load_ec5_observations = ActionUploadOperator(
     task_id    = "load_ec5_observations",
     conn_id    = "streetspectra-action-database",
-    input_path = "/tmp/ec5/street-spectra/transformed-{{ds}}.json",
+    input_path = "/tmp/streetspectra/collect/ec5_{{ds}}_transformed.json",
     dag        = streetspectra_collect_dag,
 )
 
@@ -107,14 +107,14 @@ load_ec5_observations = ActionUploadOperator(
 load2_ec5_observations = SQLInsertObservationsOperator(
     task_id    = "load2_ec5_observations",
     conn_id    = "streetspectra-db",
-    input_path = "/tmp/ec5/street-spectra/transformed-{{ds}}.json",
+    input_path = "/tmp/streetspectra/collect/ec5_{{ds}}_transformed.json",
     dag        = streetspectra_collect_dag,
 )
 
 
 clean_up_ec5_files = BashOperator(
     task_id      = "clean_up_ec5_files",
-    bash_command = "rm -f /tmp/ec5/street-spectra/*{{ds}}.json",
+    bash_command = "rm -f /tmp/streetspectra/collect/ec5_{{ds}}*.json",
     dag        = streetspectra_collect_dag,
 )
 
@@ -128,21 +128,21 @@ export_ec5_old = EC5ExportEntriesOperator(
     conn_id      = "oldspectra-epicollect5",
     start_date   = "{{ds}}",
     end_date     = "{{next_ds}}",
-    output_path  = "/tmp/ec5/street-spectra/old-{{ds}}.json",
+    output_path  = "/tmp/streetspectra/collect/ec5_{{ds}}_old.json",
     dag          = streetspectra_collect_dag,
 )
 
 transform_ec5_old = EC5TransformOperator(
     task_id      = "transform_ec5_old",
-    input_path   = "/tmp/ec5/street-spectra/old-{{ds}}.json",
-    output_path  = "/tmp/ec5/street-spectra/old-transformed-{{ds}}.json",
+    input_path   = "/tmp/streetspectra/collect/ec5_{{ds}}_old.json",
+    output_path  = "/tmp/streetspectra/collect/ec5_{{ds}}_old_transformed.json",
     dag          = streetspectra_collect_dag,
 )
 
 load_ec5_old = ActionUploadOperator(
     task_id    = "load_ec5_old",
     conn_id    = "streetspectra-action-database",
-    input_path = "/tmp/ec5/street-spectra/old-transformed-{{ds}}.json",
+    input_path = "/tmp/streetspectra/collect/ec5_{{ds}}_old_transformed.json",
     dag        = streetspectra_collect_dag,
 )
 
@@ -151,7 +151,7 @@ load_ec5_old = ActionUploadOperator(
 load2_ec5_old = SQLInsertObservationsOperator(
     task_id    = "load2_ec5_old",
     conn_id    = "streetspectra-db",
-    input_path = "/tmp/ec5/street-spectra/old-transformed-{{ds}}.json",
+    input_path = "/tmp/streetspectra/collect/ec5_{{ds}}_old_transformed.json",
     dag        = streetspectra_collect_dag,
 )
 

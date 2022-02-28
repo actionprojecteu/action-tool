@@ -47,7 +47,7 @@ default_args = {
     'email'           : ("developer@actionproject.eu","astrorafael@gmail.com"), # CAMBIAR AL VERDADERO EN PRODUCCION
     'email_on_failure': True,                       # CAMBIAR A True EN PRODUCCION
     'email_on_retry'  : False,
-    'retries'         : 2,
+    'retries'         : 0,
     'retry_delay'     : timedelta(minutes=30),
     # 'queue': 'bash_queue',
     # 'pool': 'backfill',
@@ -90,26 +90,11 @@ manage_subject_sets = ShortCircuitOperator(
     task_id         = "manage_subject_sets",
     python_callable = zooniverse_manage_subject_sets,
     op_kwargs = {
-        "conn_id"  : "streetspectra-zooniverse",                # CAMBIAR AL conn_id DE PRODUCCION
+        "conn_id"  : "streetspectra-zooniverse",              
         "threshold": 85,    # 85% workflow completion status
     },
     dag           = streetspectra_feed_dag
 )
-
-# check_enough_observations = BranchPythonOperator(
-#     task_id         = "check_enough_observations",
-#     python_callable = check_number_of_entries,
-#     op_kwargs = {
-#         "conn_id"       : "streetspectra-action-database",
-#         "start_date"    : Variable.get("streetspectra_read_tstamp"),  
-#         "n_entries"     : N_ENTRIES,                              
-#         "project"       : "street-spectra",
-#         "true_task_id"  : "download_from_action",
-#         "false_task_id" : "email_no_images",
-#         "obs_type"      : 'observation',
-#     },
-#     dag           = streetspectra_feed_dag
-# )
 
 check_enough_observations = BranchPythonOperator(
     task_id         = "check_enough_observations",
@@ -134,21 +119,10 @@ email_no_images = EmailOperator(
     dag          = streetspectra_feed_dag,
 )
 
-# download_from_action = ActionDownloadFromVariableDateOperator(
-#     task_id        = "download_from_action",
-#     conn_id        = "streetspectra-action-database",
-#     output_path    = "/tmp/zooniverse/streetspectra/action-{{ds}}.json",
-#     variable_name  = "streetspectra_read_tstamp",
-#     n_entries      = N_ENTRIES,                                    
-#     project        = "street-spectra", 
-#     obs_type       = "observation",
-#     dag            = streetspectra_feed_dag,
-# )
-
 download_from_action = ActionDownloadFromVariableDateOperator(
     task_id        = "download_from_action",
     conn_id        = "streetspectra-db",
-    output_path    = "/tmp/zooniverse/streetspectra/action-{{ds}}.json",
+    output_path    = "/tmp/streetspectra/feed/action_{{ds}}.json",
     variable_name  = "streetspectra_read_tstamp",
     n_entries      = N_ENTRIES,                                    
     project        = "street-spectra", 
@@ -159,7 +133,7 @@ download_from_action = ActionDownloadFromVariableDateOperator(
 upload_new_subject_set = ZooImportOperator(
     task_id         = "upload_new_subject_set",
     conn_id         = "streetspectra-zooniverse",           # CAMBIAR AL conn_id DE PRODUCCION
-    input_path      = "/tmp/zooniverse/streetspectra/action-{{ds}}.json", 
+    input_path      = "/tmp/streetspectra/feed/action_{{ds}}.json", 
     display_name    = "Subject Set {{ds}}",
     dag             = streetspectra_feed_dag,
 )
@@ -179,7 +153,7 @@ email_new_subject_set = EmailOperator(
 cleanup_action_obs_file = BashOperator(
     task_id      = "cleanup_action_obs_file",
     trigger_rule = "none_failed",    # For execution of just one preceeding branch only
-    bash_command = "rm -f /tmp/zooniverse/streetspectra/*{{ds}}.json",
+    bash_command = "rm -f /tmp/streetspectra/feed/action_{{ds}}.json",
     dag          = streetspectra_feed_dag,
 )
 
