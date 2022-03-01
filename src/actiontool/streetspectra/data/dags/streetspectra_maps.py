@@ -33,7 +33,8 @@ from actiontool import __version__
 from airflow_actionproject import __version__ as __lib_version__
 from airflow_actionproject.operators.ssh import SCPOperator
 from airflow_actionproject.operators.streetspectra.sqlite import ActionRangedDownloadOperator
-from airflow_actionproject.operators.streetspectra.maps   import AddClassificationsOperator, FoliumMapOperator, ImagesSyncOperator
+from airflow_actionproject.operators.streetspectra.maps   import AddClassificationsOperator, FoliumMapOperator
+from airflow_actionproject.operators.streetspectra.maps   import ImagesSyncOperator, MetadataSyncOperator
 
 # ---------------------
 # Default DAG arguments
@@ -100,7 +101,8 @@ map_generate_html = FoliumMapOperator(
     input_path   = "/tmp/streetspectra/maps/observations_with_classifications_{{ds}}.json",
     output_path  = "/tmp/streetspectra/maps/streetspectra_map.html",
     ssh_conn_id  = "streetspectra-guaix",
-    remote_slug  = "~jaz/Street-Spectra/StreetSpectra_pictures",
+    imag_remote_slug = "Street-Spectra/StreetSpectra_pictures",
+    meta_remote_slug = "Street-Spectra/StreetSpectra_metadata",
     center_longitude = -3.726111,
     center_latitude  = 40.45111,
     dag          = streetspectra_maps_dag,
@@ -124,14 +126,26 @@ map_sync_images = ImagesSyncOperator(
     dag        = streetspectra_maps_dag,
 )
 
+map_sync_metadata = MetadataSyncOperator(
+    task_id    = "map_sync_metadata",
+    sql_conn_id= "streetspectra-db",
+    ssh_conn_id= "streetspectra-guaix",
+    input_path = "/tmp/streetspectra/maps/observations_with_classifications_{{ds}}.json",
+    temp_dir   = "/tmp/streetspectra/maps/metadata",
+    remote_slug= "Street-Spectra/StreetSpectra_pictures",
+    project    = 'street-spectra',
+    dag        = streetspectra_maps_dag,
+)
+
+
 map_cleanup_files = BashOperator(
     task_id      = "map_cleanup_files",
     bash_command = "rm -f /tmp/streetspectra/maps/*_{{ds}}.json; rm -f /tmp/streetspectra/maps/streetspectra_map.html",
     dag          = streetspectra_maps_dag,
 )
 
-
-map_export_observations >> map_add_classifications >> map_generate_html >> map_copy_html >> map_sync_images >> map_cleanup_files
+map_sync_images >> map_export_observations >> map_add_classifications >> map_sync_metadata
+map_sync_metadata >> map_generate_html >> map_copy_html >> map_cleanup_files
 
 
 if __name__ == '__main__':
