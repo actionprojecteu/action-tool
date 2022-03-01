@@ -114,13 +114,13 @@ map_add_classifications = AddClassificationsOperator(
     task_id      = "map_add_classifications",
     conn_id      = "streetspectra-db",
     input_path   = "/tmp/streetspectra/maps/observations_{{ds}}.json",
-    output_path  = "/tmp/streetspectra/maps/observations_classifications_{{ds}}.json",
+    output_path  = "/tmp/streetspectra/maps/observations_with_classifications_{{ds}}.json",
     dag          = streetspectra_maps_dag,
 )
 
 map_generate_html = FoliumMapOperator(
     task_id      = "map_generate_html",
-    input_path   = "/tmp/streetspectra/maps/observations_classifications_{{ds}}.json",
+    input_path   = "/tmp/streetspectra/maps/observations_with_classifications_{{ds}}.json",
     output_path  = "/tmp/streetspectra/maps/streetspectra_map.html",
     ssh_conn_id  = "streetspectra-guaix",
     remote_slug  = "~jaz/Street-Spectra/StreetSpectra_pictures",

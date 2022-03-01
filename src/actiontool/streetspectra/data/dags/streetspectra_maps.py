@@ -91,13 +91,13 @@ map_add_classifications = AddClassificationsOperator(
     task_id      = "map_add_classifications",
     conn_id      = "streetspectra-db",
     input_path   = "/tmp/streetspectra/maps/observations_{{ds}}.json",
-    output_path  = "/tmp/streetspectra/maps/observations_classifications_{{ds}}.json",
+    output_path  = "/tmp/streetspectra/maps/observations_with_classifications_{{ds}}.json",
     dag          = streetspectra_maps_dag,
 )
 
 map_generate_html = FoliumMapOperator(
     task_id      = "map_generate_html",
-    input_path   = "/tmp/streetspectra/maps/observations_classifications_{{ds}}.json",
+    input_path   = "/tmp/streetspectra/maps/observations_with_classifications_{{ds}}.json",
     output_path  = "/tmp/streetspectra/maps/streetspectra_map.html",
     ssh_conn_id  = "streetspectra-guaix",
     remote_slug  = "~jaz/Street-Spectra/StreetSpectra_pictures",
@@ -124,7 +124,14 @@ map_sync_images = ImagesSyncOperator(
     dag        = streetspectra_maps_dag,
 )
 
-map_export_observations >> map_add_classifications >> map_generate_html >> map_copy_html >> map_sync_images
+map_cleanup_files = BashOperator(
+    task_id      = "map_cleanup_files",
+    bash_command = "rm -f /tmp/streetspectra/maps/*_{{ds}}.json; rm -f /tmp/streetspectra/maps/streetspectra_map.html",
+    dag          = streetspectra_maps_dag,
+)
+
+
+map_export_observations >> map_add_classifications >> map_generate_html >> map_copy_html >> map_sync_images >> map_cleanup_files
 
 
 if __name__ == '__main__':
