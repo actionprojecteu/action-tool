@@ -195,7 +195,8 @@ CREATE TABLE IF NOT EXISTS epicollect5_t
     project             TEXT,    -- source project identifier ('street-spectra')
     source              TEXT,    -- Observing platform ('Epicollect5')
     obs_type            TEXT,    -- Entry type ('observation')
-
+    width               INTEGER, -- Image width (for HTML generation purposes)
+    height              INTEGER, -- Image height (for HTML generation purposes)
     PRIMARY KEY(image_id)
 );
 
@@ -204,6 +205,7 @@ CREATE TABLE IF NOT EXISTS images_t
 (
     image_id            TEXT,    -- Image GUID
     uploaded_at         TEXT,    -- Timestamp when it was uploaded to GUAIX
+   
  
     PRIMARY KEY(image_id),
     FOREIGN KEY(image_id) REFERENCES epicollect5_t(image_id)
