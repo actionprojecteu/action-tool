@@ -71,7 +71,6 @@ streetspectra_maps_dag = DAG(
     'streetspectra_maps_dag',
     default_args      = default_args,
     description       = 'StreetSpectra: HTML maps',
-    schedule_interval = '@daily',
     start_date        = days_ago(1),
     schedule_interval = '00 13 * * *', # Execute monthly at midday (13:00)
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
