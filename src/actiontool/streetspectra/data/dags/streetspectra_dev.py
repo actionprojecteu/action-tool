@@ -569,7 +569,7 @@ streetspectra_publish_dag = DAG(
     default_args      = default_args,
     description       = 'StreetSpectra: Zenodo publish workflow',
     #schedule_interval = '@monthly',
-    schedule_interval = '30 12 1 * *', # Execute monthly at midday (12:30)
+    #schedule_interval = '30 12 1 * *', # Execute monthly at midday (12:30)
     start_date        = days_ago(2),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
 )
@@ -601,7 +601,7 @@ check_new_individual_csv = BranchPythonOperator(
         "input_path"    : "/tmp/streetspectra/publish/streetspectra-individual.csv",
         "input_type"    : "individual",
         "true_task_id"  : "publish_individual_csv",
-        "false_task_id" : "clean_up_publish_files",
+        "false_task_id" : "join_indiv_publish",
     },
     dag           = streetspectra_publish_dag
 )
@@ -614,7 +614,7 @@ check_new_aggregated_csv = BranchPythonOperator(
         "input_path"    : "/tmp/streetspectra/publish/streetspectra-aggregated.csv",
         "input_type"    : "aggregated",
         "true_task_id"  : "publish_aggregated_csv",
-        "false_task_id" : "clean_up_publish_files",
+        "false_task_id" : "join_aggr_publish",
     },
     dag           = streetspectra_publish_dag
 )
@@ -626,6 +626,18 @@ CREATORS = [
     {'name': "Gonzalez, Rafael", 'affiliation': "Universidad Complutense de Madrid"},
     {'name': "Garcia, Lucia",    'affiliation': "Universidad Complutense de Madrid"}
 ]
+
+
+# publish_aggregated_csv = DummyOperator(
+#     task_id      = "publish_aggregated_csv",
+#     dag          = streetspectra_publish_dag,
+# )
+
+# publish_individual_csv = DummyOperator(
+#     task_id      = "publish_individual_csv",
+#     dag          = streetspectra_publish_dag,
+# )
+
 
 # Publish the aggregated dataset to Zenodo
 # This operator is valid for anybody wishing to publish datasets to Zenodo
