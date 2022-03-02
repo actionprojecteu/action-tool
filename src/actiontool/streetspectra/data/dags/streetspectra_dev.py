@@ -434,9 +434,9 @@ download_from_action >> upload_new_subject_set >> email_new_subject_set
 [email_new_subject_set, email_no_images] >> cleanup_action_obs_file
 
 
-# ====================================================
-# CLASSIFICATIONS AGGREGATION AND PUBLICATION WORKFLOW
-# ====================================================
+# ====================================
+# CLASSIFICATIONS AGGREGATION WORKFLOW
+# ====================================
 
 # Aqui hay que tener en cuenta que el exportado de Zooniverse es completo
 # y que la BD de ACTION NO detecta duplicados
@@ -450,9 +450,9 @@ download_from_action >> upload_new_subject_set >> email_new_subject_set
 streetspectra_aggregate_dag = DAG(
     'streetspectra_aggregate_dag',
     default_args      = default_args,
-    description       = 'StreetSpectra: Zooniverse classifications export workflow',
+    description       = 'StreetSpectra: Zooniverse classifications workflow',
     #schedule_interval = '@monthly',
-    schedule_interval = '30 12 1 * *', # Execute monthly at midday (12:30)
+    #schedule_interval = '30 12 */2 * *', # Execute every two days at midday (12:30)
     start_date        = days_ago(2),
     tags              = ['StreetSpectra', 'ACTION PROJECT'],
 )
@@ -461,23 +461,23 @@ streetspectra_aggregate_dag = DAG(
 # Tasks
 # -----
 
-# Perform the whole Zooniverse export from the beginning of the project
-export_classifications = ZooniverseExportOperator(
-    task_id     = "export_classifications",
-    conn_id     = "streetspectra-zooniverse-test",      # CAMBIAR AL conn_id DE PRODUCCION
-    output_path = "/tmp/aggregate/zoo_complete_{{ds}}.json",
-    generate    = False, 
-    wait        = False, 
-    timeout     = 600,
-    dag         = streetspectra_aggregate_dag,
-)
-
-
-# export_classifications = BashOperator(
+# # Perform the whole Zooniverse export from the beginning of the project
+# export_classifications = ZooniverseExportOperator(
 #     task_id     = "export_classifications",
-#     bash_command = "mkdir -p /tmp/zooniverse; cp /home/rafa/repos/action-tool/complete-*.json /tmp/zooniverse",
+#     conn_id     = "streetspectra-zooniverse-test",      # CAMBIAR AL conn_id DE PRODUCCION
+#     output_path = "/tmp/aggregate/zoo_complete_{{ds}}.json",
+#     generate    = False, 
+#     wait        = False, 
+#     timeout     = 600,
 #     dag         = streetspectra_aggregate_dag,
 # )
+
+
+export_classifications = BashOperator(
+    task_id     = "export_classifications",
+    bash_command = "cp /home/rafa/repos/airflow-actionproject/zoo_complete*.json /tmp/streetspectra/aggregate/",
+    dag         = streetspectra_aggregate_dag,
+)
 
 
 # Produces an output file with only new classifications
@@ -521,16 +521,9 @@ check_new_spectra = BranchPythonOperator(
     op_kwargs = {
         "conn_id"       : "streetspectra-db",
         "true_task_id"  : "aggregate_classifications",
-        "false_task_id" : "skip_to_end",
+        "false_task_id" : "clean_up_classif_files",
     },
     dag           = streetspectra_aggregate_dag
-)
-
-# needed for branching
-skip_to_end = DummyOperator(
-    task_id    = "skip_to_end",
-    trigger_rule = "none_failed",    # For execution of just one preceeding branch only
-    dag        = streetspectra_aggregate_dag,
 )
 
 
@@ -544,13 +537,51 @@ aggregate_classifications = AggregateOperator(
     dag        = streetspectra_aggregate_dag,
 )
 
+
+# Clean up temporary files
+# clean_up_classif_files = BashOperator(
+#     task_id      = "clean_up_classif_files",
+#     trigger_rule = "none_failed",    # For execution of just one preceeding branch only
+#     bash_command = "rm -f /tmp/aggregate/*_{{ds}}.json",
+#     dag          = streetspectra_aggregate_dag,
+# )
+
+clean_up_classif_files = DummyOperator(
+    task_id      = "clean_up_classif_files",
+    trigger_rule = "none_failed",    # For execution of just one preceeding branch only
+    dag          = streetspectra_aggregate_dag,
+)
+
+# -----------------
+# Task dependencies
+# -----------------
+
+export_classifications >> only_new_classifications >> transform_classifications >> preprocess_classifications
+preprocess_classifications >> check_new_spectra >> [aggregate_classifications, clean_up_classif_files]
+aggregate_classifications >> clean_up_classif_files
+
+# ==============================
+# PUBLICATION TO ZENODO WORKFLOW
+# ==============================
+
+streetspectra_publish_dag = DAG(
+    'streetspectra_publish_dag',
+    default_args      = default_args,
+    description       = 'StreetSpectra: Zenodo publish workflow',
+    #schedule_interval = '@monthly',
+    schedule_interval = '30 12 1 * *', # Execute monthly at midday (12:30)
+    start_date        = days_ago(2),
+    tags              = ['StreetSpectra', 'ACTION PROJECT'],
+)
+
+
 # Export aggregated classifications into CSV file format
 # This is valid only for StreetSpectra
 export_aggregated_csv = AggregateCSVExportOperator(
     task_id     = "export_aggregated_csv",
     conn_id     = "streetspectra-db",
-    output_path = "/tmp/streetspectra/aggregate/streetspectra-aggregated.csv",
-    dag         = streetspectra_aggregate_dag,
+    output_path = "/tmp/streetspectra/publish/streetspectra-aggregated.csv",
+    dag         = streetspectra_publish_dag,
 )
 
 # Export individuyal classifications into CSV format
@@ -558,8 +589,8 @@ export_aggregated_csv = AggregateCSVExportOperator(
 export_individual_csv = IndividualCSVExportOperator(
     task_id     = "export_individual_csv",
     conn_id     = "streetspectra-db",
-    output_path = "/tmp/streetspectra/aggregate/streetspectra-individual.csv",
-    dag         = streetspectra_aggregate_dag,
+    output_path = "/tmp/streetspectra/publish/streetspectra-individual.csv",
+    dag         = streetspectra_publish_dag,
 )
 
 check_new_individual_csv = BranchPythonOperator(
@@ -567,12 +598,12 @@ check_new_individual_csv = BranchPythonOperator(
     python_callable = check_new_csv_version,
     op_kwargs = {
         "conn_id"       : "streetspectra-db",
-        "input_path"    : "/tmp/streetspectra/aggregate/streetspectra-individual.csv",
+        "input_path"    : "/tmp/streetspectra/publish/streetspectra-individual.csv",
         "input_type"    : "individual",
         "true_task_id"  : "publish_individual_csv",
-        "false_task_id" : "join_indiv_published",
+        "false_task_id" : "clean_up_publish_files",
     },
-    dag           = streetspectra_aggregate_dag
+    dag           = streetspectra_publish_dag
 )
 
 check_new_aggregated_csv = BranchPythonOperator(
@@ -580,26 +611,12 @@ check_new_aggregated_csv = BranchPythonOperator(
     python_callable = check_new_csv_version,
     op_kwargs = {
         "conn_id"       : "streetspectra-db",
-        "input_path"    : "/tmp/streetspectra/aggregate/streetspectra-aggregated.csv",
+        "input_path"    : "/tmp/streetspectra/publish/streetspectra-aggregated.csv",
         "input_type"    : "aggregated",
         "true_task_id"  : "publish_aggregated_csv",
-        "false_task_id" : "join_aggre_published",
+        "false_task_id" : "clean_up_publish_files",
     },
-    dag           = streetspectra_aggregate_dag
-)
-
-
-# needed for parallel export+publish operations
-join_aggre_published = DummyOperator(
-    task_id      = "join_aggre_published",
-    trigger_rule = "none_failed",    # For execution of just one preceeding branch only
-    dag          = streetspectra_aggregate_dag,
-)
-
-join_indiv_published = DummyOperator(
-    task_id      = "join_indiv_published",
-    trigger_rule = "none_failed",    # For execution of just one preceeding branch only
-    dag          = streetspectra_aggregate_dag,
+    dag           = streetspectra_publish_dag
 )
 
 
@@ -616,13 +633,13 @@ publish_aggregated_csv = ZenodoPublishDatasetOperator(
     task_id     = "publish_aggregated_csv",
     conn_id     = "streetspectra-zenodo-sandbox",                   # CAMBIAR AL conn_id DE PRODUCCION
     title       = "Street Spectra aggregated classifications",
-    file_path   = "/tmp/streetspectra/aggregate/streetspectra-aggregated.csv",
+    file_path   = "/tmp/streetspectra/publish/streetspectra-aggregated.csv",
     description = "CSV file containing aggregated classifications for light sources data and metadata.",
     version     = '{{ execution_date.strftime("%y.%m")}}',
     creators    = CREATORS,
     communities = [{'title': "Street Spectra", 'id': "street-spectra"}, {'title':"Action Project", 'id': "actionprojecteu"}],
     status      = 'draft',  # either 'draft' or 'published'
-    dag         = streetspectra_aggregate_dag,
+    dag         = streetspectra_publish_dag,
 )
 
 # Publish the individual dataset to Zenodo
@@ -631,49 +648,47 @@ publish_individual_csv = ZenodoPublishDatasetOperator(
     task_id     = "publish_individual_csv",
     conn_id     = "streetspectra-zenodo-sandbox",               # CAMBIAR AL conn_id DE PRODUCCION
     title       = "Street Spectra individual classifications",
-    file_path   = "/tmp/streetspectra/aggregate/streetspectra-individual.csv",
+    file_path   = "/tmp/streetspectra/publish/streetspectra-individual.csv",
     description = "CSV file containing individual classifications for subjects data and metadata.",
     version     = '{{ execution_date.strftime("%y.%m")}}',
     creators    = CREATORS,
     communities = [{'title': "Street Spectra", 'id': "street-spectra"}, {'title':"Action Project", 'id': "actionprojecteu"}],
     status      = 'draft',  # either 'draft' or 'published'
-    dag         = streetspectra_aggregate_dag,
+    dag         = streetspectra_publish_dag,
 )
 
 
-# needed for parallel export+publish operations
-join_published = DummyOperator(
-    task_id    = "join_published",
-    dag        = streetspectra_aggregate_dag,
+join_indiv_publish = DummyOperator(
+    task_id      = "join_indiv_publish",
+    trigger_rule = "none_failed",    # For execution of just one preceeding branch only
+    dag          = streetspectra_publish_dag,
+)
+
+join_aggr_publish = DummyOperator(
+    task_id      = "join_aggr_publish",
+    trigger_rule = "none_failed",    # For execution of just one preceeding branch only
+    dag          = streetspectra_publish_dag,
 )
 
 # Clean up temporary files
-# clean_up_classif_files = BashOperator(
+# clean_up_publish_files = BashOperator(
 #     task_id      = "clean_up_classif_files",
 #     trigger_rule = "none_failed",    # For execution of just one preceeding branch only
-#     bash_command = "rm /tmp/aggregate/*.csv; rm /tmp/aggregate/*_{{ds}}.json",
+#     bash_command = "rm -f /tmp/publish/*.csv",
 #     dag          = streetspectra_aggregate_dag,
 # )
 
-clean_up_classif_files = DummyOperator(
-    task_id      = "clean_up_classif_files",
-    trigger_rule = "none_failed",    # For execution of just one preceeding branch only
-    dag          = streetspectra_aggregate_dag,
+clean_up_publish_files = DummyOperator(
+    task_id      = "clean_up_publish_files",
+    dag          = streetspectra_publish_dag,
 )
 
+export_aggregated_csv >> check_new_aggregated_csv >> [publish_aggregated_csv, join_aggr_publish]
+export_individual_csv >> check_new_individual_csv >> [publish_individual_csv, join_indiv_publish]
+[join_indiv_publish, join_aggr_publish]  >> clean_up_publish_files
 
 
-# -----------------
-# Task dependencies
-# -----------------
 
-export_classifications >> only_new_classifications >> transform_classifications >> preprocess_classifications
-preprocess_classifications >> check_new_spectra >> [aggregate_classifications, skip_to_end]
-aggregate_classifications >> [export_aggregated_csv, export_individual_csv]
-export_aggregated_csv >> check_new_aggregated_csv >> [publish_aggregated_csv, join_aggre_published]
-export_individual_csv >> check_new_individual_csv >> [publish_individual_csv, join_indiv_published]
-[join_aggre_published, join_indiv_published] >> join_published
-[join_published, skip_to_end] >> clean_up_classif_files
 
 if __name__ == '__main__':
     print(f"DAG version: {__version__}, library version {__lib_version__}")

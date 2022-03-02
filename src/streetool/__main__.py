@@ -149,6 +149,8 @@ def createParser():
 	group1.add_argument('--all', action='store_true', help='Purge all tables')
 	group1.add_argument('--classif', action='store_true', help='Purge classification & aggregation tables')
 	group1.add_argument('--collect', action='store_true', help='Purge image collection tables')
+	group1.add_argument('--publ', action='store_true', help='Purge publishing tables')
+	group1.add_argument('--maps', action='store_true', help='Purge maps generation tables')
 	
 	# ----------------------------------------
 	# Create second level parser for 'sources'
