@@ -103,7 +103,7 @@ check_new_individual_csv = BranchPythonOperator(
         "input_path"    : "/tmp/streetspectra/publish/streetspectra-individual.csv",
         "input_type"    : "individual",
         "true_task_id"  : "publish_individual_csv",
-        "false_task_id" : "clean_up_publish_files",
+        "false_task_id" : "join_indiv_publish",
     },
     dag           = streetspectra_publish_dag
 )
@@ -116,7 +116,7 @@ check_new_aggregated_csv = BranchPythonOperator(
         "input_path"    : "/tmp/streetspectra/publish/streetspectra-aggregated.csv",
         "input_type"    : "aggregated",
         "true_task_id"  : "publish_aggregated_csv",
-        "false_task_id" : "clean_up_publish_files",
+        "false_task_id" : "join_aggr_publish",
     },
     dag           = streetspectra_publish_dag
 )
