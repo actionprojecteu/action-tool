@@ -227,7 +227,7 @@ airflow connections add \
 --conn-login "<remote login>" \
 --conn-password "<ssh key file path>" \
 --conn-schema "<path to document root dir>" \
---conn-extra '{"jump_hosts": [], "timeout": 15}' \
+--conn-extra '{"jump_hosts": [], "timeout": 15, "docroot_slug": <slug where the document root maps to>}' \
 --conn-description "Connection to streetspectra image file storage" \
 streetspectra-guaix
 ```
