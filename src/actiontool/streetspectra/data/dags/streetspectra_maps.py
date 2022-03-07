@@ -132,7 +132,7 @@ map_sync_metadata = MetadataSyncOperator(
     ssh_conn_id= "streetspectra-guaix",
     input_path = "/tmp/streetspectra/maps/observations_with_classifications_{{ds}}.json",
     temp_dir   = "/tmp/streetspectra/maps/metadata",
-    remote_slug= "Street-Spectra/StreetSpectra_pictures",
+    remote_slug= "Street-Spectra/StreetSpectra_metadata",
     project    = 'street-spectra',
     dag        = streetspectra_maps_dag,
 )
