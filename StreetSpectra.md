@@ -235,6 +235,7 @@ streetspectra-guaix
 * The `conn.password` field contains a path to the local SSH private key file
 * The `conn-schema` field defines de "document root". All images and master HTML file will be copied relative to this path.
 * The `conn-extra` field contains a JSON string with additional connection parameters:
-	-  `timeout` in seconds for the SSH connection. Exceeding this timeout will fail the connection.
+	- `timeout` in seconds for the SSH connection. Exceeding this timeout will fail the connection.
 	- `jump_hosts` contains an array of jump hosts, if necessary. Should set to the empty array `[]` if no jump hosts are needed.
+	- `docroot_slug` is the URL fragment (i.e. `~rfg`) where the physical document root directory is mapped to (i.e. `/home/rfg/public_html`)
 
